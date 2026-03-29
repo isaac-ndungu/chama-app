@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import authRoutes from './routes/auth.js';
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ const app = express();
 // Security headers
 app.use(helmet());
 
+// only allow your frontend origin
 app.use(cors({
     origin: process.env.CLIENT_URL,
     credentials: true   // required for httpOnly cookie (refresh token)
@@ -39,10 +41,14 @@ if (process.env.NODE_ENV === 'development') {
 // Health check
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
+app.use('/api/auth', authRoutes);
 
+// 404 handler
 app.use((req, res) => {
     res.status(404).json({ error: `Route ${req.method} ${req.path} not found` });
 });
+
+app.use('/api/auth', authRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {

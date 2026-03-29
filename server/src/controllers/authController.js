@@ -92,7 +92,7 @@ export const logout = catchAsync(async (req, res, next) => {
     if (token) {
         const user = await User.findById(req.user.id).select('+refreshTokens');
         if (user) {
-            usaer.refreshTokens = user.refreshTokens.filter(t => t !== token);
+            user.refreshTokens = user.refreshTokens.filter(t => t !== token);
             await user.save({ validateBeforeSave: false });
         }
     }
