@@ -42,3 +42,5 @@ const chamaSchema = new mongoose.Schema({
         default: 'active'
     }
 }, { timestamps: true } );
+
+export default mongoose.model('Chama', chamaSchema);
