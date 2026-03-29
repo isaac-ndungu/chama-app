@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
+import chamaRoutes from './routes/chamas.js';
 
 dotenv.config();
 
@@ -42,6 +43,7 @@ if (process.env.NODE_ENV === 'development') {
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/chamas', chamaRoutes);
 
 // 404 handler
 app.use((req, res) => {
