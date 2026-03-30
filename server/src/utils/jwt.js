@@ -1,4 +1,9 @@
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+
 
 export const signAccessToken = (userId) => {
     return jwt.sign(

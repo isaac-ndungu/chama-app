@@ -7,8 +7,6 @@ import contributionRoutes from './contributions.js';
 import loanRoutes from './loans.js';
 import auditRoutes from './audit.js';
 import dashboardRoutes from './dashboard.js';
-import { protect } from '../middleware/auth.js';
-import { requireChamaMember } from '../middleware/requireChamaMember.js';
 import { addClient, removeClient } from '../services/sseService.js';
 import reportRoutes from './reports.js';
 
