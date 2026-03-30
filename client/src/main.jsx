@@ -14,6 +14,13 @@ import AuditLog from './pages/AuditLog';
 import NotFound from './pages/NotFound';
 import './index.css'
 import { Toaster } from 'react-hot-toast';
+import { ChamaProvider } from './context/ChamaContext';
+import { useParams } from 'react-router-dom';
+
+const ChamaLayout = ({ children }) => {
+  const { chamaId } = useParams();
+  return <ChamaProvider chamaId={chamaId}>{children}</ChamaProvider>;
+};
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -27,11 +34,11 @@ createRoot(document.getElementById('root')).render(
           {/* Protected routes*/}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/chamas/:chamaId" element={<ChamaDetail />} />
-            <Route path="/chamas/:chamaId/members" element={<Members />} />
-            <Route path="/chamas/:chamaId/contributions" element={<Contributions />} />
-            <Route path="/chamas/:chamaId/loans" element={<Loans />} />
-            <Route path="/chamas/:chamaId/audit" element={<AuditLog />} />
+            <Route path="/chamas/:chamaId" element={<ChamaLayout><ChamaDetail /></ChamaLayout> } />
+            <Route path="/chamas/:chamaId/members" element={<ChamaLayout><Members /></ChamaLayout>} />
+            <Route path="/chamas/:chamaId/contributions" element={<ChamaLayout><Contributions /></ChamaLayout>} />
+            <Route path="/chamas/:chamaId/loans" element={<ChamaLayout><Loans /></ChamaLayout>} />
+            <Route path="/chamas/:chamaId/audit" element={<ChamaLayout><AuditLog /></ChamaLayout>} />
           </Route>
 
           <Route path="/404" element={<NotFound />} />

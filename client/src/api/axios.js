@@ -22,7 +22,7 @@ let failedQueue = [];
 
 const processQueue = (error, token = null) => {
     failedQueue.forEach(prom => {
-        if (error) c
+        if (error) prom.reject(error);
         else prom.resolve(token);
     });
     failedQueue = [];
