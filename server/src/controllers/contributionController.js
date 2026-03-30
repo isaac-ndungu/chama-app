@@ -3,6 +3,7 @@ import AppError from '../utils/AppError.js';
 import catchAsync from '../utils/catchAsync.js';
 import { createAuditLog } from '../services/auditService.js';
 import { recalculateMemberLedger } from '../services/ledgerService.js';
+import { broadcastToChama } from '../services/sseService.js';
 
 export const recordContribution = catchAsync(async (req, res, next) => {
     const { chamaId } = req.params;
@@ -56,6 +57,13 @@ export const verifyContribution = catchAsync(async (req, res, next) => {
     contribution.verifiedAt = new Date();
     contribution.status = 'verified';
     await contribution.save();
+
+    broadcastToChama(chamaId, 'contribution_verified', {
+        contributionId: contribution._id,
+        memberName: req.user.name,  
+        amount: contribution.amount,
+        verifiedAt: contribution.verifiedAt
+    });
 
     // Update ledger synchronously — ledger must stay in sync with verified contributions
     await recalculateMemberLedger(chamaId, contribution.memberId);
