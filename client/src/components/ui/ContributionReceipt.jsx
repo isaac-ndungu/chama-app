@@ -7,7 +7,7 @@ export default function ContributionReceipt({ contribution, recorderName, onReco
   if (!contribution) return null;
 
   const roleLabel = (role) => {
-    if (role === 'chairman') return 'Chairman';
+    if (role === 'chairperson') return 'Chairperson';
     if (role === 'treasurer') return 'Treasurer';
     return 'Officer';
   };

@@ -188,7 +188,7 @@ export default function Contributions() {
                 {/* Recorded by */}
                 <div className="text-[12px] text-[#6B6560]">
                   {c.recordedBy?.name
-                    ? `${c.recordedBy.role === 'treasurer' ? 'Treasurer' : 'Chairman'} (${c.recordedBy.name?.split(' ')[0]} ${c.recordedBy.name?.split(' ')[1]?.[0]}.)`
+                    ? `${c.recordedBy.role === 'treasurer' ? 'Treasurer' : 'Chairperson'} (${c.recordedBy.name?.split(' ')[0]} ${c.recordedBy.name?.split(' ')[1]?.[0]}.)`
                     : <span className="text-[#9E9690]">—</span>
                   }
                 </div>

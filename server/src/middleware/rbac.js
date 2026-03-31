@@ -1,6 +1,6 @@
 import AppError from '../utils/AppError.js';
 
-// requireRole('chairman', 'treasurer') 
+// requireRole('chairperson', 'treasurer') 
 export const requireRole = (...allowedRoles) => {
     return (req, res, next) => {
         if (!req.membership) {

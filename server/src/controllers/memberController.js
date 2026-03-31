@@ -66,7 +66,7 @@ export const changeRole = catchAsync(async (req, res, next) => {
     const { role } = req.body;
 
     if (!['treasurer', 'member'].includes(role)) {
-        return next(new AppError('Can only assign treasurer or member role. Chairman is assigned at chama creation.', 400));
+        return next(new AppError('Can only assign treasurer or member role. Chairperson is assigned at chama creation.', 400));
     }
 
     const membership = await Membership.findOne({
@@ -74,8 +74,8 @@ export const changeRole = catchAsync(async (req, res, next) => {
         chamaId: req.params.chamaId
     });
     if (!membership) return next(new AppError('Membership not found', 404));
-    if (membership.role === 'chairman') {
-        return next(new AppError('Cannot change the chairman\'s role', 403));
+    if (membership.role === 'chairperson') {
+        return next(new AppError('Cannot change the chairperson\'s role', 403));
     }
 
     const before = membership.toObject();

@@ -16,11 +16,11 @@ export const createChama = catchAsync(async (req, res, next) => {
         createdBy: req.user._id
     });
 
-    // Creator automatically becomes chairman
+    // Creator automatically becomes chairperson
     await Membership.create({
         chamaId: chama._id,
         userId: req.user._id,
-        role: 'chairman',
+        role: 'chairperson',
         status: 'active',
         rotationPosition: 1
     });

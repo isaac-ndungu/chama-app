@@ -8,9 +8,9 @@ import { requireRole } from '../middleware/rbac.js';
 const router = Router({ mergeParams: true });
 
 router.get('/', listContributions);
-router.get('/pending', requireRole('chairman', 'treasurer'), getPendingVerifications);
-router.post('/', requireRole('chairman', 'treasurer'), recordContribution);
-router.patch('/:contributionId/verify', requireRole('chairman', 'treasurer'), verifyContribution);
-router.patch('/:contributionId/dispute', requireRole('chairman', 'treasurer'), disputeContribution);
+router.get('/pending', requireRole('chairperson', 'treasurer'), getPendingVerifications);
+router.post('/', requireRole('chairperson', 'treasurer'), recordContribution);
+router.patch('/:contributionId/verify', requireRole('chairperson', 'treasurer'), verifyContribution);
+router.patch('/:contributionId/dispute', requireRole('chairperson', 'treasurer'), disputeContribution);
 
 export default router;

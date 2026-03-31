@@ -1,11 +1,11 @@
 export default function RoleBadge({ role }) {
   const styles = {
-    chairman:  'bg-[#FEF3E2] text-[#7A4D08]',
+    chairperson:  'bg-[#FEF3E2] text-[#7A4D08]',
     treasurer: 'bg-[#EEF2FF] text-[#1A3E8C]',
     member:    'bg-[#F8F6F3] text-[#6B6560] border border-[#E8E4DF]',
   };
   const labels = {
-    chairman: 'Chairman',
+    chairperson: 'Chairperson',
     treasurer: 'Treasurer',
     member: 'Member',
   };

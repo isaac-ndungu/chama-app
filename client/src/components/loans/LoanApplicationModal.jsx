@@ -112,10 +112,10 @@ export default function LoanApplicationModal({ chamaId, chama, onClose, onSucces
             </label>
             <div className="w-full h-10 px-3 border border-[#E8E4DF] rounded-lg text-[13px] bg-[#F8F6F3] text-[#1C1814] flex items-center justify-between">
               <span>{(interestRate * 100).toFixed(1)}% (Flat)</span>
-              <span className="text-[11px] text-[#9E9690]">Set by Chairman</span>
+              <span className="text-[11px] text-[#9E9690]">Set by Chairperson</span>
             </div>
             <p className="text-[11px] text-[#9E9690] mt-1">
-              Your group's default loan rate. Change in Settings (Chairman only).
+              Your group's default loan rate. Change in Settings (Chairperson only).
             </p>
           </div>
 

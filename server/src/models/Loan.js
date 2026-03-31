@@ -8,7 +8,7 @@ const approvalSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['chairman', 'treasurer', 'member'],
+        enum: ['chairperson', 'treasurer', 'member'],
         required: true
     },
     approvedAt: {
@@ -29,7 +29,7 @@ const rejectionSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['chairman', 'treasurer', 'member'],
+        enum: ['chairperson', 'treasurer', 'member'],
         required: true
     },
     rejectedAt: {

@@ -44,7 +44,7 @@ export default function Settings() {
 
   const handleSave = async () => {
     if (!can('edit_settings')) {
-      toast.error('Only Chairman can edit settings');
+      toast.error('Only Chairperson can edit settings');
       return;
     }
 
@@ -83,7 +83,7 @@ export default function Settings() {
     }
   };
 
-  const isChairman = role === 'chairman';
+  const isChairperson = role === 'chairperson';
   const isSaving = saving || loading;
 
   // Interest rate for read-only display
@@ -95,10 +95,10 @@ export default function Settings() {
         <div>
           <h1 className="font-serif text-[26px] text-[#1C1814]">Mipangilio / Settings</h1>
           <p className="text-sm text-[#9E9690] mt-0.5">
-            {isChairman ? 'Chama configuration · Chairman access required for changes' : 'Chama configuration · View only'}
+            {isChairperson ? 'Chama configuration · Chairperson access required for changes' : 'Chama configuration · View only'}
           </p>
         </div>
-        {hasChanges && isChairman && (
+        {hasChanges && isChairperson && (
           <button
             onClick={handleSave}
             disabled={isSaving}
@@ -128,7 +128,7 @@ export default function Settings() {
                 name="name"
                 value={form.name}
                 onChange={handleChange}
-                disabled={!isChairman || loading}
+                disabled={!isChairperson || loading}
                 placeholder="e.g. Kilimani Savings Group"
                 className="w-full px-4 py-2.5 border border-[#E8E4DF] rounded-lg text-[13px] text-[#1C1814] bg-white disabled:bg-[#F8F6F3] disabled:text-[#9E9690] focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
               />
@@ -143,7 +143,7 @@ export default function Settings() {
                 name="description"
                 value={form.description}
                 onChange={handleChange}
-                disabled={!isChairman || loading}
+                disabled={!isChairperson || loading}
                 placeholder="Brief description of your group"
                 rows="3"
                 className="w-full px-4 py-2.5 border border-[#E8E4DF] rounded-lg text-[13px] text-[#1C1814] bg-white disabled:bg-[#F8F6F3] disabled:text-[#9E9690] focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 resize-none"
@@ -174,7 +174,7 @@ export default function Settings() {
                   name="contributionAmount"
                   value={form.contributionAmount}
                   onChange={handleChange}
-                  disabled={!isChairman || loading}
+                  disabled={!isChairperson || loading}
                   placeholder="5000"
                   min="1"
                   step="100"
@@ -195,7 +195,7 @@ export default function Settings() {
                 name="meetingFrequency"
                 value={form.meetingFrequency}
                 onChange={handleChange}
-                disabled={!isChairman || loading}
+                disabled={!isChairperson || loading}
                 className="w-full px-4 py-2.5 border border-[#E8E4DF] rounded-lg text-[13px] text-[#1C1814] bg-white disabled:bg-[#F8F6F3] disabled:text-[#9E9690] focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
               >
                 <option value="weekly">Weekly</option>
@@ -222,7 +222,7 @@ export default function Settings() {
                 name="defaultLoanInterestRate"
                 value={form.defaultLoanInterestRate}
                 onChange={handleChange}
-                disabled={!isChairman || loading}
+                disabled={!isChairperson || loading}
                 placeholder="10"
                 min="0"
                 max="100"
@@ -232,7 +232,7 @@ export default function Settings() {
               <span className="text-[#9E9690] text-[13px] ml-2">%</span>
             </div>
             <div className="text-[11px] text-[#9E9690] mt-1">
-              Flat rate · Pre-fills loan application form · {isChairman ? 'Current' : 'Default'}: {currentInterestRate}%
+              Flat rate · Pre-fills loan application form · {isChairperson ? 'Current' : 'Default'}: {currentInterestRate}%
             </div>
           </div>
         </div>
@@ -261,13 +261,13 @@ export default function Settings() {
 
             <div className="flex gap-3 mt-5">
               <button
-                disabled={!isChairman}
+                disabled={!isChairperson}
                 className="border border-amber-600 text-amber-600 text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-amber-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Close Current Cycle
               </button>
               <button
-                disabled={!isChairman}
+                disabled={!isChairperson}
                 className="bg-amber-600 text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-amber-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Start New Cycle (close current first)
@@ -281,11 +281,11 @@ export default function Settings() {
         )}
 
         {/* Access section */}
-        {!isChairman && (
+        {!isChairperson && (
           <div className="pt-6 border-t border-[#E8E4DF]">
             <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
               <div className="text-[12px] text-blue-900">
-                <strong>View Only Mode:</strong> You are viewing this page as {role}. Only the Chairman can edit these settings.
+                <strong>View Only Mode:</strong> You are viewing this page as {role}. Only the Chairperson can edit these settings.
               </div>
             </div>
           </div>

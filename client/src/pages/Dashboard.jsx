@@ -66,7 +66,7 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [chamaId]);
 
-  const isOfficer = role === 'chairman' || role === 'treasurer';
+  const isOfficer = role === 'chairperson' || role === 'treasurer';
   const cycle = dashboard?.cycle;
   const pendingCount = dashboard?.pendingVerifications || 0;
   const currentPosition = cycle?.currentPosition || 1;

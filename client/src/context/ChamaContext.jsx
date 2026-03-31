@@ -4,16 +4,16 @@ import api from '../api/axios';
 const ChamaContext = createContext(null);
 
 const ROLE_PERMISSIONS = {
-    record_contribution: ['chairman', 'treasurer'],
-    verify_contribution: ['chairman', 'treasurer'],
-    dispute_contribution: ['chairman', 'treasurer'],
-    apply_for_loan: ['chairman', 'treasurer'],
-    vote_on_loan: ['chairman', 'treasurer', 'member'],
-    record_repayment: ['chairman', 'treasurer'],
-    view_full_audit: ['chairman', 'treasurer'],
-    view_all_ledgers: ['chairman', 'treasurer'],
-    manage_members: ['chairman'],
-    generate_all_pdfs: ['chairman', 'treasurer'],
+    record_contribution: ['chairperson', 'treasurer'],
+    verify_contribution: ['chairperson', 'treasurer'],
+    dispute_contribution: ['chairperson', 'treasurer'],
+    apply_for_loan: ['chairperson', 'treasurer'],
+    vote_on_loan: ['chairperson', 'treasurer', 'member'],
+    record_repayment: ['chairperson', 'treasurer'],
+    view_full_audit: ['chairperson', 'treasurer'],
+    view_all_ledgers: ['chairperson', 'treasurer'],
+    manage_members: ['chairperson'],
+    generate_all_pdfs: ['chairperson', 'treasurer'],
 };
 
 export const ChamaProvider = ({ chamaId, children }) => {
