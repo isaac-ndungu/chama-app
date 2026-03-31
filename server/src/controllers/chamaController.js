@@ -1,4 +1,5 @@
 import Chama from '../models/Chama.js';
+import Cycle from '../models/Cycle.js';
 import Membership from '../models/Membership.js';
 import AppError from '../utils/AppError.js';
 import catchAsync from '../utils/catchAsync.js';
@@ -64,7 +65,8 @@ export const getChamaById = catchAsync(async (req, res, next) => {
         status: 'active'
     });
 
-    res.json({ chama, memberCount, myRole: req.membership.role });
+    const userRole = req.membership.role === 'chairperson' ? 'chairperson' : req.membership.role;
+    res.json({ chama, memberCount, myRole: userRole });
 });
 
 export const updateChama = catchAsync(async (req, res, next) => {
@@ -99,4 +101,63 @@ export const updateChama = catchAsync(async (req, res, next) => {
     });
 
     res.json({ chama });
+});
+
+export const closeCycle = catchAsync(async (req, res, next) => {
+    const { chamaId } = req.params;
+    const activeCycle = await Cycle.findOne({ chamaId, status: 'active' });
+    if (!activeCycle) return next(new AppError('No active cycle found', 404));
+
+    activeCycle.status = 'closed';
+    await activeCycle.save();
+
+    await createAuditLog({
+        chamaId,
+        actorId: req.user._id,
+        action: 'CYCLE_CLOSED',
+        targetCollection: 'cycles',
+        targetId: activeCycle._id,
+        before: { status: 'active' },
+        after: { status: 'closed' },
+        ipAddress: req.ip
+    });
+
+    res.json({ cycle: activeCycle });
+});
+
+export const startCycle = catchAsync(async (req, res, next) => {
+    const { chamaId } = req.params;
+    const chama = await Chama.findById(chamaId);
+    if (!chama) return next(new AppError('Chama not found', 404));
+
+    const activeCycle = await Cycle.findOne({ chamaId, status: 'active' });
+    if (activeCycle) return next(new AppError('There is already an active cycle', 400));
+
+    const lastCycle = await Cycle.findOne({ chamaId }).sort({ cycleNumber: -1 });
+    const nextCycleNumber = lastCycle ? lastCycle.cycleNumber + 1 : 1;
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + 30);
+
+    const newCycle = await Cycle.create({
+        chamaId,
+        cycleNumber: nextCycleNumber,
+        startDate,
+        endDate,
+        status: 'active',
+        expectedAmount: chama.contributionAmount * (await Membership.countDocuments({ chamaId, status: 'active' }))
+    });
+
+    await createAuditLog({
+        chamaId,
+        actorId: req.user._id,
+        action: 'CYCLE_CREATED',
+        targetCollection: 'cycles',
+        targetId: newCycle._id,
+        before: null,
+        after: newCycle.toObject(),
+        ipAddress: req.ip
+    });
+
+    res.status(201).json({ cycle: newCycle });
 });

@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import { useChama } from '../hooks/useChama';
+import { useDashboard } from '../hooks/useDashboard';
 import { useAuth } from '../context/AuthContext';
-import { updateChamaSettings } from '../api/chamas';
+import { updateChamaSettings, closeCycle, startCycle } from '../api/chamas';
 import toast from 'react-hot-toast';
 
 export default function Settings() {
   const { chamaId } = useParams();
   const { chama, role, loading, can } = useChama(chamaId);
+  const [dashboardRefresh, setDashboardRefresh] = useState(0);
+  const { data: dashboard, loading: dashLoading } = useDashboard(chamaId, dashboardRefresh);
   const { user } = useAuth();
 
   const [form, setForm] = useState({
@@ -80,6 +83,30 @@ export default function Settings() {
       toast.error(err.response?.data?.error || 'Failed to save settings');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCloseCycle = async () => {
+    if (!isChairperson) return;
+    try {
+      await closeCycle(chamaId);
+      toast.success('Current cycle closed.');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to close current cycle');
+    } finally {
+      setDashboardRefresh((v) => v + 1);
+    }
+  };
+
+  const handleStartCycle = async () => {
+    if (!isChairperson) return;
+    try {
+      await startCycle(chamaId);
+      toast.success('New cycle started.');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to start new cycle');
+    } finally {
+      setDashboardRefresh((v) => v + 1);
     }
   };
 
@@ -238,39 +265,46 @@ export default function Settings() {
         </div>
 
         {/* Current Cycle section */}
-        {chama && (
-          <div className="pt-6 border-t border-[#E8E4DF]">
-            <h2 className="text-[14px] font-bold uppercase tracking-[0.08em] text-[#9E9690] mb-4">
-              Mzunguko wa Sasa / Current Cycle
-            </h2>
+        <div className="pt-6 border-t border-[#E8E4DF]">
+          <h2 className="text-[14px] font-bold uppercase tracking-[0.08em] text-[#9E9690] mb-4">
+            Mzunguko wa Sasa / Current Cycle
+          </h2>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Mzunguko</div>
-                <div className="text-[18px] font-serif text-[#1C1814] mt-2">Cycle 3</div>
-              </div>
-              <div>
-                <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Ilianza</div>
-                <div className="text-[14px] text-[#1C1814] mt-2">14 Mar 2024</div>
-              </div>
-              <div>
-                <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Inaisha</div>
-                <div className="text-[14px] text-[#1C1814] mt-2">14 Apr 2024</div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Mzunguko</div>
+              <div className="text-[18px] font-serif text-[#1C1814] mt-2">
+                {dashLoading ? 'Loading...' : dashboard?.cycle?.cycleNumber ? `Cycle ${dashboard.cycle.cycleNumber}` : 'No active cycle'}
               </div>
             </div>
+            <div>
+              <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Ilianza</div>
+              <div className="text-[14px] text-[#1C1814] mt-2">
+                {dashboard?.cycle?.startDate ? new Date(dashboard.cycle.startDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Inaisha</div>
+              <div className="text-[14px] text-[#1C1814] mt-2">
+                {dashboard?.cycle?.endDate ? new Date(dashboard.cycle.endDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+              </div>
+            </div>
+          </div>
 
-            <div className="flex gap-3 mt-5">
-              <button
-                disabled={!isChairperson}
-                className="border border-amber-600 text-amber-600 text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-amber-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Close Current Cycle
-              </button>
-              <button
-                disabled={!isChairperson}
-                className="bg-amber-600 text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-amber-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Start New Cycle (close current first)
+          <div className="flex gap-3 mt-5">
+            <button
+              disabled={!isChairperson}
+              onClick={handleCloseCycle}
+              className="border border-amber-600 text-amber-600 text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-amber-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Close Current Cycle
+            </button>
+            <button
+              disabled={!isChairperson}
+              onClick={handleStartCycle}
+              className="bg-amber-600 text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-amber-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Start New Cycle (close current first)
               </button>
             </div>
 
@@ -278,7 +312,6 @@ export default function Settings() {
               ⚠️ Closing a cycle calculates final balances and marks all unpaid contributions as overdue. This cannot be undone.
             </div>
           </div>
-        )}
 
         {/* Access section */}
         {!isChairperson && (

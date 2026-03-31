@@ -20,7 +20,7 @@ const auditLogSchema = new mongoose.Schema({
             'LOAN_APPLIED', 'LOAN_APPROVED', 'LOAN_REJECTED', 'LOAN_REPAYMENT_RECORDED', 'LOAN_DEFAULTED',
             'MEMBER_INVITED', 'MEMBER_ROLE_CHANGED', 'MEMBER_SUSPENDED', 'MEMBER_EXITED',
             'CYCLE_CREATED', 'CYCLE_CLOSED', 'POT_DISBURSED',
-            'CHAMA_CREATED', 'CHAMA_UPDATED'
+            'CHAMA_CREATED', 'CHAMA_UPDATED', 'CHAMA_SETTINGS_UPDATED'
         ]
     },
     targetCollection: {

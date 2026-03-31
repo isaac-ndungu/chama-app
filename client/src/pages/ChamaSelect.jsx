@@ -45,7 +45,7 @@ export default function ChamaSelect() {
     };
 
     const roleColors = {
-        chairman: 'bg-amber-100 text-amber-800',
+        chairperson: 'bg-amber-100 text-amber-800',
         treasurer: 'bg-blue-100 text-blue-800',
         member: 'bg-gray-100 text-gray-600',
     };

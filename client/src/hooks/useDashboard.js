@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 
-export const useDashboard = (chamaId) => {
+export const useDashboard = (chamaId, refreshKey = 0) => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -24,7 +24,7 @@ export const useDashboard = (chamaId) => {
         };
 
         fetchDashboard();
-    }, [chamaId]);
+    }, [chamaId, refreshKey]);
 
     return {
         data,
