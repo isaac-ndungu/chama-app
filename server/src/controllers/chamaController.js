@@ -66,3 +66,37 @@ export const getChamaById = catchAsync(async (req, res, next) => {
 
     res.json({ chama, memberCount, myRole: req.membership.role });
 });
+
+export const updateChama = catchAsync(async (req, res, next) => {
+    const { name, description, contributionAmount, meetingFrequency, defaultLoanInterestRate } = req.body;
+    const { chamaId } = req.params;
+
+    const chama = await Chama.findById(chamaId);
+    if (!chama) return next(new AppError('Chama not found', 404));
+
+    // Store before state for audit
+    const before = chama.toObject();
+
+    // Update allowed fields
+    if (name !== undefined) chama.name = name;
+    if (description !== undefined) chama.description = description;
+    if (contributionAmount !== undefined) chama.contributionAmount = contributionAmount;
+    if (meetingFrequency !== undefined) chama.meetingFrequency = meetingFrequency;
+    if (defaultLoanInterestRate !== undefined) chama.defaultLoanInterestRate = defaultLoanInterestRate;
+
+    await chama.save();
+
+    // Log the change
+    await createAuditLog({
+        chamaId: chama._id,
+        actorId: req.user._id,
+        action: 'CHAMA_SETTINGS_UPDATED',
+        targetCollection: 'chamas',
+        targetId: chama._id,
+        before,
+        after: chama.toObject(),
+        ipAddress: req.ip
+    });
+
+    res.json({ chama });
+});

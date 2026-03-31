@@ -9,11 +9,13 @@ export default function LoanApplicationModal({ chamaId, chama, onClose, onSucces
   const { user } = useAuth();
   const [form, setForm] = useState({
     principalAmount: '',
-    interestRate: 0.1,
     durationMonths: 3,
   });
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Use chama's default loan interest rate
+  const interestRate = chama?.defaultLoanInterestRate || 0.1;
 
   // Pre-calculate loan amounts whenever form changes
   useEffect(() => {
@@ -28,7 +30,7 @@ export default function LoanApplicationModal({ chamaId, chama, onClose, onSucces
       return;
     }
 
-    const interest = principal * form.interestRate;
+    const interest = principal * interestRate;
     const totalDue = principal + interest;
     const monthlyInstalment = Math.round(totalDue / form.durationMonths);
 
@@ -38,7 +40,7 @@ export default function LoanApplicationModal({ chamaId, chama, onClose, onSucces
       totalDue,
       monthlyInstalment,
     });
-  }, [form.principalAmount, form.interestRate, form.durationMonths]);
+  }, [form.principalAmount, form.durationMonths, interestRate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,7 +59,7 @@ export default function LoanApplicationModal({ chamaId, chama, onClose, onSucces
       const res = await api.post(`/chamas/${chamaId}/loans`, {
         borrowerId: user.id,
         principalAmount: parseInt(form.principalAmount, 10),
-        interestRate: form.interestRate,
+        interestRate: interestRate,
         durationMonths: parseInt(form.durationMonths, 10),
       });
 
@@ -103,23 +105,18 @@ export default function LoanApplicationModal({ chamaId, chama, onClose, onSucces
             </p>
           </div>
 
-          {/* Interest Rate */}
+          {/* Interest Rate - Read only, set by group */}
           <div>
             <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">
-              Interest Rate (Flat) - {(form.interestRate * 100).toFixed(0)}%
+              Interest Rate (Group Default)
             </label>
-            <input
-              type="range"
-              min="0.05"
-              max="0.5"
-              step="0.05"
-              value={form.interestRate}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, interestRate: parseFloat(e.target.value) }))
-              }
-              className="w-full h-2 bg-[#E8E4DF] rounded-lg appearance-none cursor-pointer"
-            />
-            <p className="text-[11px] text-[#9E9690] mt-1">Range: 5% - 50%</p>
+            <div className="w-full h-10 px-3 border border-[#E8E4DF] rounded-lg text-[13px] bg-[#F8F6F3] text-[#1C1814] flex items-center justify-between">
+              <span>{(interestRate * 100).toFixed(1)}% (Flat)</span>
+              <span className="text-[11px] text-[#9E9690]">Set by Chairman</span>
+            </div>
+            <p className="text-[11px] text-[#9E9690] mt-1">
+              Your group's default loan rate. Change in Settings (Chairman only).
+            </p>
           </div>
 
           {/* Duration in Months */}
@@ -153,7 +150,7 @@ export default function LoanApplicationModal({ chamaId, chama, onClose, onSucces
                 <span className="text-[13px] font-semibold text-[#1C1814]">{fmt(preview.principal)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[13px] text-[#6B6560]">Interest ({(form.interestRate * 100).toFixed(0)}%)</span>
+                <span className="text-[13px] text-[#6B6560]">Interest ({(interestRate * 100).toFixed(1)}%)</span>
                 <span className="text-[13px] font-semibold text-[#1C1814]">{fmt(preview.interest)}</span>
               </div>
               <div className="border-t border-[#E8E4DF] pt-3 flex justify-between items-center">

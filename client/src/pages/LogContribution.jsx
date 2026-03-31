@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { useContributions } from '../hooks/useContributions';
+import { useDashboard } from '../hooks/useDashboard';
 import ContributionReceipt from '../components/ui/ContributionReceipt';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
@@ -13,10 +14,10 @@ export default function LogContribution() {
   const { chamaId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { record } = useContributions(chamaId);
+  const { record, contributions } = useContributions(chamaId);
+  const { data: dashboard, loading: dashLoading } = useDashboard(chamaId);
 
   const [members, setMembers] = useState([]);
-  const [activeCycle, setActiveCycle] = useState(null);
   const [form, setForm] = useState({
     memberId: '',
     amount: '',
@@ -31,8 +32,6 @@ export default function LogContribution() {
     api.get(`/chamas/${chamaId}/members`)
       .then(res => setMembers(res.data.members))
       .catch(() => {});
-    // In a real app, fetch active cycle
-    setActiveCycle({ cycleNumber: 3, startDate: '2024-03-14', endDate: '2024-04-14' });
   }, [chamaId]);
 
   const handleMpesaBlur = async () => {
@@ -58,7 +57,7 @@ export default function LogContribution() {
         ...form,
         amount,
         mpesaRef: form.mpesaRef.toUpperCase().trim(),
-        cycleId: activeCycle?._id,
+        cycleId: dashboard?.cycle?._id,
       });
       setReceipt(result);
     } catch (err) {
@@ -69,8 +68,9 @@ export default function LogContribution() {
   };
 
   const selectedMember = members.find(m => m.userId?._id === form.memberId);
-  const paidThisCycle = 12; // demo
-  const totalMembers = members.length || 18;
+  const totalMembers = members.length || 0;
+  // Count verified contributions for this cycle
+  const paidThisCycle = contributions?.filter(c => c.status === 'verified').length || 0;
 
   return (
     <AppLayout>
@@ -78,7 +78,7 @@ export default function LogContribution() {
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="font-serif text-[26px] text-[#1C1814]">Record Contribution</h1>
-          <p className="text-sm text-[#9E9690] mt-0.5">Log a contribution for Cycle 3</p>
+          <p className="text-sm text-[#9E9690] mt-0.5">Log a contribution for {dashLoading ? 'Cycle...' : dashboard?.cycle?.cycleNumber ? `Cycle ${dashboard.cycle.cycleNumber}` : 'active cycle'}</p>
         </div>
         <button
           onClick={() => navigate(`/chamas/${chamaId}/contributions`)}
@@ -172,7 +172,7 @@ export default function LogContribution() {
               <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">Cycle</label>
               <input
                 disabled
-                value={activeCycle ? `Cycle ${activeCycle.cycleNumber} — ${activeCycle.startDate} to ${activeCycle.endDate}` : 'Loading...'}
+                value={dashLoading ? 'Loading...' : dashboard?.cycle ? `Cycle ${dashboard.cycle.cycleNumber} — ${new Date(dashboard.cycle.startDate).toLocaleDateString('en-KE')} to ${new Date(dashboard.cycle.endDate).toLocaleDateString('en-KE')}` : 'No active cycle'}
                 className="w-full h-10 px-3 border border-[#E8E4DF] rounded-lg text-[13px] bg-[#F8F6F3] text-[#9E9690] cursor-not-allowed"
               />
             </div>
@@ -220,7 +220,7 @@ export default function LogContribution() {
               <span className="text-[#9E9690]">Date</span>
               <span className="text-[#1C1814]">{form.paymentDate ? new Date(form.paymentDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
               <span className="text-[#9E9690]">Cycle</span>
-              <span className="text-[#1C1814]">3 of 18</span>
+              <span className="text-[#1C1814]">{paidThisCycle} of {totalMembers}</span>
               <span className="text-[#9E9690]">Recorded by</span>
               <span className="text-[#1C1814]">{user?.name?.split(' ')[0]} {user?.name?.split(' ')[1]?.[0]}.</span>
             </div>
@@ -229,7 +229,7 @@ export default function LogContribution() {
           {/* Cycle progress */}
           <div className="bg-white border border-[#E8E4DF] rounded-2xl p-5">
             <div className="text-[10px] font-bold uppercase tracking-widest text-[#9E9690] mb-3">
-              Cycle 3 Progress
+              Cycle {dashboard?.cycle?.cycleNumber || '—'} Progress
             </div>
             <div className="mb-3">
               <div className="flex justify-between text-[12px] text-[#6B6560] mb-1.5">

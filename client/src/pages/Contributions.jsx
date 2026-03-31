@@ -6,6 +6,7 @@ import StatusBadge from '../components/dashboard/StatusBadge';
 import VerifyModal from '../components/ui/VerifyModal';
 import ContributionReceipt from '../components/ui/ContributionReceipt';
 import { useContributions } from '../hooks/useContributions';
+import { useDashboard } from '../hooks/useDashboard';
 import { useChama } from '../hooks/useChama';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -19,6 +20,7 @@ export default function Contributions() {
   const { user } = useAuth();
   const { can, role } = useChama(chamaId);
   const { contributions, pending, loading, verify, record } = useContributions(chamaId);
+  const { data: dashboard, loading: dashLoading } = useDashboard(chamaId);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -55,7 +57,9 @@ export default function Contributions() {
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="font-serif text-[26px] text-[#1C1814]">Contributions</h1>
-          <p className="text-sm text-[#9E9690] mt-0.5">Cycle 3 · 14 Mar – 14 Apr 2024</p>
+          <p className="text-sm text-[#9E9690] mt-0.5">
+            {dashLoading ? 'Loading cycle...' : dashboard?.cycle?.cycleNumber ? `Cycle ${dashboard.cycle.cycleNumber} · ${new Date(dashboard.cycle.startDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' })} – ${new Date(dashboard.cycle.endDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}` : 'No active cycle'}
+          </p>
         </div>
         {isOfficer && (
           <button

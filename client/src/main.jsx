@@ -13,6 +13,7 @@ import Contributions from './pages/Contributions';
 import LogContribution from './pages/LogContribution';
 import Loans from './pages/Loans';
 import AuditLog from './pages/AuditLog';
+import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import './index.css'
 import { Toaster } from 'react-hot-toast';
@@ -45,6 +46,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/chamas/:chamaId/contributions/new" element={<ChamaLayout><LogContribution /></ChamaLayout>} />
             <Route path="/chamas/:chamaId/loans" element={<ChamaLayout><Loans /></ChamaLayout>} />
             <Route path="/chamas/:chamaId/audit" element={<ChamaLayout><AuditLog /></ChamaLayout>} />
+            <Route path="/chamas/:chamaId/settings" element={<ChamaLayout><Settings /></ChamaLayout>} />
           </Route>
 
           <Route path="/404" element={<NotFound />} />

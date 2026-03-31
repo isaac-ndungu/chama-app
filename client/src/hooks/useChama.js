@@ -12,6 +12,7 @@ const ROLE_PERMISSIONS = {
     view_all_ledgers: ['chairman', 'treasurer'],
     manage_members: ['chairman'],
     generate_all_pdfs: ['chairman', 'treasurer'],
+    edit_settings: ['chairman'],
 };
 
 export const useChama = (chamaId) => {

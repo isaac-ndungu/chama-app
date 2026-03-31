@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { createChama, getMyChamas, getChamaById } from '../controllers/chamaController.js';
+import { createChama, getMyChamas, getChamaById, updateChama } from '../controllers/chamaController.js';
 import { protect } from '../middleware/auth.js';
 import { requireChamaMember } from '../middleware/requireChamaMember.js';
+import { requireRole } from '../middleware/rbac.js';
 import memberRoutes from './members.js';
 import contributionRoutes from './contributions.js';
 import loanRoutes from './loans.js';
@@ -61,6 +62,7 @@ router.get('/:chamaId/events', router.get('/:chamaId/events', async (req, res, n
 
 // All routes below require chama membership (chamaId in params)
 router.get('/:chamaId', requireChamaMember, getChamaById);
+router.put('/:chamaId', requireChamaMember, requireRole('chairman'), updateChama);
 
 router.use('/:chamaId/members', requireChamaMember, memberRoutes);
 router.use('/:chamaId/contributions', requireChamaMember, contributionRoutes);
