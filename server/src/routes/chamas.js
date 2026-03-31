@@ -17,7 +17,22 @@ router.use(protect);
 
 router.post('/', createChama);
 router.get('/mine', getMyChamas);
-router.get('/:chamaId/events', protect, requireChamaMember, (req, res) => {
+
+// SSE Route
+router.get('/:chamaId/events', router.get('/:chamaId/events', async (req, res, next) => {
+    // Read token from query param for SSE connections
+    const token = req.query.token || req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'No token' });
+    try {
+        const decoded = verifyAccessToken(token);
+        const user = await User.findById(decoded.id);
+        if (!user) return res.status(401).json({ error: 'User not found' });
+        req.user = user;
+        next();
+    } catch {
+        return res.status(401).json({ error: 'Invalid token' });
+    }
+}, requireChamaMember, (req, res) => {
     const { chamaId } = req.params;
 
     // Set SSE headers
@@ -42,7 +57,7 @@ router.get('/:chamaId/events', protect, requireChamaMember, (req, res) => {
         clearInterval(heartbeat);
         removeClient(chamaId, res);
     });
-});
+}));
 
 // All routes below require chama membership (chamaId in params)
 router.get('/:chamaId', requireChamaMember, getChamaById);

@@ -8,6 +8,8 @@ import Sidebar from '../components/layout/Sidebar';
 import TopBar from '../components/layout/TopBar';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import useChamaSSE from '../hooks/useChamaSSE';
+
 
 const StatusBadge = ({ status }) => {
   const config = {
@@ -105,6 +107,13 @@ const Contributions = () => {
       c.status?.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
+  
+  useChamaSSE(chamaId, {
+  contribution_verified: () => {
+    loadData();   // refresh the full list when any contribution is verified
+    toast.success('A contribution was just verified — feed updated');
+  }
+});
 
   if (loading) {
     return (
