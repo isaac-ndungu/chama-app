@@ -30,5 +30,7 @@ export const useDashboard = (chamaId) => {
         data,
         loading,
         error,
+        cycle: data?.cycle,
+        currentPosition: data?.cycle?.currentPosition || 0,
     };
 };

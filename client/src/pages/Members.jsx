@@ -6,6 +6,7 @@ import StatusBadge from '../components/dashboard/StatusBadge';
 import RoleBadge from '../components/ui/RoleBadge';
 import RotationQueue from '../components/dashboard/RotationQueue';
 import { useChama } from '../hooks/useChama';
+import { useDashboard } from '../hooks/useDashboard';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
@@ -15,6 +16,7 @@ export default function Members() {
   const { chamaId } = useParams();
   const navigate = useNavigate();
   const { chama, can, memberCount } = useChama(chamaId);
+  const { currentPosition, loading: dashLoading } = useDashboard(chamaId);
 
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,8 +56,7 @@ export default function Members() {
     }
   };
 
-  // Current pot recipient position (assume cycle 3 = position 3 for demo)
-  const currentPosition = 3;
+
 
   return (
     <AppLayout>

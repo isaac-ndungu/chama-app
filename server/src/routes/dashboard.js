@@ -34,10 +34,21 @@ router.get('/', catchAsync(async (req, res) => {
 
         const chama = await Chama.findById(chamaId);
         const totalExpected = activeCycle.expectedAmount || (members.length * chama.contributionAmount);
+        
+        // Get current position from pot recipient
+        let currentPosition = 0;
+        if (activeCycle.potRecipientId) {
+            const potRecipientMembership = await Membership.findOne({
+                chamaId,
+                userId: activeCycle.potRecipientId
+            });
+            currentPosition = potRecipientMembership?.rotationPosition || 0;
+        }
 
         cycleData = {
             cycleNumber: activeCycle.cycleNumber,
             potRecipient: activeCycle.potRecipientId,
+            currentPosition,
             totalCollected,
             totalExpected: activeCycle.expectedAmount,
             collectionRate: activeCycle.expectedAmount

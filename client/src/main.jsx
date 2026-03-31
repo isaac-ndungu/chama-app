@@ -8,7 +8,9 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import ChamaDetail from './pages/ChamaDetail';
 import Members from './pages/Members';
+import MemberProfile from './pages/MemberProfile';
 import Contributions from './pages/Contributions';
+import LogContribution from './pages/LogContribution';
 import Loans from './pages/Loans';
 import AuditLog from './pages/AuditLog';
 import NotFound from './pages/NotFound';
@@ -38,7 +40,9 @@ createRoot(document.getElementById('root')).render(
             <Route path="/chamas/:chamaId" element={<ChamaLayout><Dashboard /></ChamaLayout>} />
             <Route path="/chamas/:chamaId" element={<ChamaLayout><ChamaDetail /></ChamaLayout>} />
             <Route path="/chamas/:chamaId/members" element={<ChamaLayout><Members /></ChamaLayout>} />
+            <Route path="/chamas/:chamaId/members/:memberId" element={<ChamaLayout><MemberProfile /></ChamaLayout>} />
             <Route path="/chamas/:chamaId/contributions" element={<ChamaLayout><Contributions /></ChamaLayout>} />
+            <Route path="/chamas/:chamaId/contributions/new" element={<ChamaLayout><LogContribution /></ChamaLayout>} />
             <Route path="/chamas/:chamaId/loans" element={<ChamaLayout><Loans /></ChamaLayout>} />
             <Route path="/chamas/:chamaId/audit" element={<ChamaLayout><AuditLog /></ChamaLayout>} />
           </Route>
