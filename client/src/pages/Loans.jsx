@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import MemberAvatar from '../components/dashboard/MemberAvatar';
 import StatusBadge from '../components/dashboard/StatusBadge';
 import RoleBadge from '../components/ui/RoleBadge';
 import ProgressBar from '../components/ui/ProgressBar';
+import LoanApplicationModal from '../components/loans/LoanApplicationModal';
+import LoanDetailsModal from '../components/loans/LoanDetailsModal';
 import { useLoans } from '../hooks/useLoans';
 import { useChama } from '../hooks/useChama';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 import toast from 'react-hot-toast';
 
 const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
@@ -155,7 +158,7 @@ export default function Loans() {
   const { chamaId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { can } = useChama(chamaId);
+  const { chama, can } = useChama(chamaId);
   const { pendingLoans, activeLoans, settledLoans, overdueLoans, loading, vote, recordRepayment } = useLoans(chamaId);
   const [members, setMembers] = useState([]);
   const [tab, setTab] = useState('pending');
@@ -164,6 +167,15 @@ export default function Loans() {
   const [votingId, setVotingId] = useState(null);
   const [repayTarget, setRepayTarget] = useState(null);
   const [repayLoading, setRepayLoading] = useState(false);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [selectedLoanDetails, setSelectedLoanDetails] = useState(null);
+
+  // Load members list
+  useEffect(() => {
+    api.get(`/chamas/${chamaId}/members`)
+      .then(res => setMembers(res.data.members || []))
+      .catch(() => toast.error('Failed to load members'));
+  }, [chamaId]);
 
   const isOfficer = can('record_contribution');
 
@@ -210,7 +222,7 @@ export default function Loans() {
         </div>
         {isOfficer && (
           <button
-            onClick={() => navigate(`/chamas/${chamaId}/loans/new`)}
+            onClick={() => setShowApplicationModal(true)}
             className="bg-amber-600 text-white h-10 px-5 rounded-lg font-semibold text-sm hover:bg-amber-700 transition"
           >
             + Loan Application
@@ -361,7 +373,7 @@ export default function Loans() {
                 loan={loan}
                 isOfficer={isOfficer}
                 onRecordRepayment={setRepayTarget}
-                onViewDetails={l => navigate(`/chamas/${chamaId}/loans/${l._id}`)}
+                onViewDetails={setSelectedLoanDetails}
               />
             ))
           )}
@@ -382,7 +394,7 @@ export default function Loans() {
                 loan={loan}
                 isOfficer={false}
                 onRecordRepayment={() => {}}
-                onViewDetails={l => navigate(`/chamas/${chamaId}/loans/${l._id}`)}
+                onViewDetails={setSelectedLoanDetails}
               />
             ))
           )}
@@ -396,6 +408,27 @@ export default function Loans() {
           onClose={() => setRepayTarget(null)}
           onSubmit={handleRepayment}
           loading={repayLoading}
+        />
+      )}
+
+      {/* Loan Application Modal */}
+      {showApplicationModal && (
+        <LoanApplicationModal
+          chamaId={chamaId}
+          chama={chama}
+          onClose={() => setShowApplicationModal(false)}
+          onSuccess={() => {
+            setTab('pending');
+          }}
+        />
+      )}
+
+      {/* Loan Details Modal */}
+      {selectedLoanDetails && (
+        <LoanDetailsModal
+          loan={selectedLoanDetails}
+          members={members}
+          onClose={() => setSelectedLoanDetails(null)}
         />
       )}
     </AppLayout>

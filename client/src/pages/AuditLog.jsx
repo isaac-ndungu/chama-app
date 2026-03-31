@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
-import api from '../api/axios';
+import { fetchAuditLog, exportAuditPDF } from '../api/audit';
 import toast from 'react-hot-toast';
 
 const fmtDateTime = (d) => {
@@ -97,25 +97,44 @@ export default function AuditLog() {
   const load = useCallback(async (newSkip = 0, replace = true) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ limit: LIMIT, skip: newSkip });
-      const res = await api.get(`/chamas/${chamaId}/audit?${params}`);
+      const params = {
+        limit: LIMIT,
+        skip: newSkip,
+        ...(filters.from && { from: filters.from }),
+        ...(filters.to && { to: filters.to }),
+        ...(filters.action && { action: filters.action }),
+        ...(filters.member && { member: filters.member }),
+      };
+      const res = await fetchAuditLog(chamaId, params);
       const newLogs = res.data.logs;
       setLogs(prev => replace ? newLogs : [...prev, ...newLogs]);
       setHasMore(newLogs.length === LIMIT);
-      setTotal(res.data.total || 47); // fallback
+      setTotal(res.data.total || 0);
     } catch {
       toast.error('Failed to load audit log');
     } finally {
       setLoading(false);
     }
-  }, [chamaId]);
+  }, [chamaId, filters]);
 
-  useEffect(() => { load(0, true); }, [load]);
+  useEffect(() => { 
+    setSkip(0);
+    load(0, true); 
+  }, [load]);
 
   const loadMore = () => {
     const newSkip = skip + LIMIT;
     setSkip(newSkip);
     load(newSkip, false);
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      await exportAuditPDF(chamaId, filters);
+      toast.success('Audit log exported successfully');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to export PDF');
+    }
   };
 
   const ACTION_OPTIONS = [
@@ -136,7 +155,9 @@ export default function AuditLog() {
             Permanent record — cannot be changed
           </p>
         </div>
-        <button className="text-[13px] text-amber-600 border border-amber-400 h-10 px-5 rounded-lg hover:bg-amber-50 transition font-semibold">
+        <button 
+          onClick={handleExportPDF}
+          className="text-[13px] text-amber-600 border border-amber-400 h-10 px-5 rounded-lg hover:bg-amber-50 transition font-semibold">
           Export PDF
         </button>
       </div>
