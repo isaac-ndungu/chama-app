@@ -2,6 +2,8 @@ import { NavLink, useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { fetchMyChamas } from '../../api/chamas';
 import { useAuth } from '../../context/AuthContext';
+import { logoutUser } from '../../api/auth';
+import toast from 'react-hot-toast';
 
 const NAV = [
   { to: '', label: 'Dashboard' },
@@ -14,12 +16,13 @@ const NAV = [
 
 export default function Sidebar() {
   const { chamaId } = useParams();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const [chamas, setChamas] = useState([]);
   const [currentChama, setCurrentChama] = useState(null);
   const [showSwitcher, setShowSwitcher] = useState(false);
   const [membership, setMembership] = useState(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     fetchMyChamas()
@@ -36,9 +39,26 @@ export default function Sidebar() {
   const initials = (name) =>
     name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '??';
 
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logoutUser();
+      if (setUser) setUser(null);
+      navigate('/login', { replace: true });
+    } catch {
+      // Even if the server call fails, clear local state and redirect
+      if (setUser) setUser(null);
+      navigate('/login', { replace: true });
+      toast.error('Session ended');
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   return (
     <aside className="w-56 bg-[#1C1814] flex flex-col fixed top-0 left-0 bottom-0 z-50 overflow-y-auto h-screen justify-between">
-      
+
       {/* HEADER */}
       <div className="px-5 pt-6 pb-4 border-b border-white/10">
         <span className="font-serif text-[18px] text-amber-500 block">
@@ -126,19 +146,45 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* USER */}
-      <div className="px-4 py-4 border-t border-white/10 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-[11px] font-bold">
-          {initials(user?.name)}
-        </div>
-        <div className="min-w-0">
-          <div className="text-white/90 text-xs font-semibold truncate">
-            {user?.name}
+      {/* USER + LOGOUT */}
+      <div className="px-4 py-3 border-t border-white/10">
+        {/* User info */}
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
+            {initials(user?.name)}
           </div>
-          <div className="text-white/40 text-[10px] capitalize">
-            {membership || 'Member'}
+          <div className="min-w-0">
+            <div className="text-white/90 text-xs font-semibold truncate">
+              {user?.name}
+            </div>
+            <div className="text-white/40 text-[10px] capitalize">
+              {membership || 'Member'}
+            </div>
           </div>
         </div>
+
+        {/* Logout button */}
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-white/40 hover:text-red-400 hover:bg-red-500/10 transition text-[12px] group disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {/* Log out icon */}
+          <svg
+            className="w-3.5 h-3 shrink-0 group-hover:text-red-400 transition"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" />
+            <path d="M10.5 11L14 8l-3.5-3" />
+            <path d="M14 8H6" />
+          </svg>
+          <span>{loggingOut ? 'Signing out…' : 'Sign out'}</span>
+        </button>
       </div>
     </aside>
   );
