@@ -82,7 +82,7 @@ export default function Dashboard() {
           pendingCount={pendingCount}
         />
 
-        <main className="p-7 max-w-[1100px]">
+        <main className="p-7 max-w-6xl">
           {/* Page title */}
           <div className="flex items-center justify-between mb-6">
             <div>

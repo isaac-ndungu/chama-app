@@ -34,9 +34,9 @@ createRoot(document.getElementById('root')).render(
 
           {/* Protected routes*/}
           <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<ChamaSelect />} /> 
+            <Route path="/" element={<ChamaSelect />} />
             <Route path="/chamas/:chamaId" element={<ChamaLayout><Dashboard /></ChamaLayout>} />
-            <Route path="/chamas/:chamaId" element={<ChamaLayout><ChamaDetail /></ChamaLayout> } />
+            <Route path="/chamas/:chamaId" element={<ChamaLayout><ChamaDetail /></ChamaLayout>} />
             <Route path="/chamas/:chamaId/members" element={<ChamaLayout><Members /></ChamaLayout>} />
             <Route path="/chamas/:chamaId/contributions" element={<ChamaLayout><Contributions /></ChamaLayout>} />
             <Route path="/chamas/:chamaId/loans" element={<ChamaLayout><Loans /></ChamaLayout>} />

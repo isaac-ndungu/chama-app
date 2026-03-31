@@ -56,7 +56,7 @@ const Avatar = ({ name }) => {
   ];
   const color = colors[(name?.charCodeAt(0) ?? 0) % colors.length];
   return (
-    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${color}`}>
+    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${color}`}>
       {initials}
     </div>
   );
@@ -73,10 +73,13 @@ const Contributions = () => {
   const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const cycle = chama?.currentCycle ?? null;
+  const pendingCount = pending.length;
+
   const loadData = async () => {
     try {
       const [contribRes, pendingRes, memberRes] = await Promise.all([
-        fetchContributions(chamaId, { status: 'verified' }),
+        fetchContributions(chamaId),
         can('verify_contribution')
           ? fetchPending(chamaId)
           : Promise.resolve({ data: { contributions: [] } }),
@@ -121,11 +124,16 @@ const Contributions = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-[#F8F6F3]">
       <Sidebar />
-      <div className="flex flex-col flex-1 min-w-0">
-        <TopBar />
-        <main className="flex-1 p-6 md:p-8 overflow-auto">
+      <div className="ml-55 flex-1 flex flex-col min-h-screen">
+        <TopBar
+          chama={chama}
+          cycle={cycle}
+          pendingCount={pendingCount}
+        />
+
+        <main className="p-7 max-w-6xl">
           {/* Page Header */}
           <div className="flex items-start justify-between mb-1">
             <div>
