@@ -1,98 +1,194 @@
-import React from 'react'
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { fetchMyChamas, createChama } from '../api/chamas';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 import toast from 'react-hot-toast';
 
-const Dashboard = () => {
-  const { user, logout } = useAuth();
+import Sidebar from '../components/layout/Sidebar';
+import TopBar from '../components/layout/TopBar';
+import StatCard from '../components/dashboard/StatCard';
+import ContributionFeed from '../components/dashboard/ContributionFeed';
+import RotationQueue from '../components/dashboard/RotationQueue';
+import AuditFeed from '../components/dashboard/AuditFeed';
+
+const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
+
+export default function Dashboard() {
+  const { chamaId } = useParams();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [chamas, setChamas] = useState([]);
+
+  const [dashboard, setDashboard] = useState(null);
+  const [contributions, setContributions] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [chama, setChama] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [form, setForm] = useState({ name: '', contributionAmount: '', meetingFrequency: 'monthly' });
+  const [role, setRole] = useState('member');
 
-  useEffect(() => {
-    fetchMyChamas()
-      .then(res => setChamas(res.data.chamas))
-      .catch(() => toast.error('Failed to load chamas'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleCreate = async (e) => {
-    e.preventDefault();
+  const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await createChama({
-        ...form,
-        contributionAmount: parseInt(form.contributionAmount, 10)
-      });
-      toast.success('Chama created!');
-      navigate(`/chamas/${res.data.chama._id}`);
+      const [dashRes, chamaRes, memberRes, contribRes, auditRes] = await Promise.all([
+        api.get(`/chamas/${chamaId}/dashboard`),
+        api.get(`/chamas/${chamaId}`),
+        api.get(`/chamas/${chamaId}/members`),
+        api.get(`/chamas/${chamaId}/contributions`),
+        api.get(`/chamas/${chamaId}/audit?limit=5`),
+      ]);
+      setDashboard(dashRes.data);
+      setChama({ ...chamaRes.data.chama, memberCount: chamaRes.data.memberCount });
+      setRole(chamaRes.data.myRole);
+      setMembers(memberRes.data.members);
+      setContributions(contribRes.data.contributions);
+      setAuditLogs(auditRes.data.logs);
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to create chama');
+      if (err.response?.status === 403) {
+        toast.error('You are not a member of this chama');
+        navigate('/');
+      } else {
+        toast.error('Failed to load dashboard');
+      }
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [chamaId, navigate]);
 
-  if (loading) return <div>Loading your chamas...</div>;
+  useEffect(() => { load(); }, [load]);
+
+  // Poll for SSE updates every 20s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      api.get(`/chamas/${chamaId}/contributions`)
+        .then(res => setContributions(res.data.contributions))
+        .catch(() => { });
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [chamaId]);
+
+  const isOfficer = role === 'chairman' || role === 'treasurer';
+  const cycle = dashboard?.cycle;
+  const pendingCount = dashboard?.pendingVerifications || 0;
+  const currentPosition = cycle?.currentPosition || 1;
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Welcome, {user?.name}</h1>
-        <button onClick={logout}>Sign Out</button>
-      </div>
+    <div className="flex min-h-screen bg-[#F8F6F3]">
+      <Sidebar />
 
-      <h2>Your Chamas</h2>
+      <div className="ml-55 flex-1 flex flex-col min-h-screen">
+        <TopBar
+          chama={chama}
+          cycle={cycle}
+          pendingCount={pendingCount}
+        />
 
-      {chamas.length === 0 ? (
-        <div>
-          <p>You're not a member of any chama yet.</p>
-          <button onClick={() => setShowCreateForm(true)}>Create a Chama</button>
-        </div>
-      ) : (
-        <>
-          <div style={{ display: 'grid', gap: 16 }}>
-            {chamas.map(chama => (
-              <Link
-                key={chama._id}
-                to={`/chamas/${chama._id}`}
-                style={{ display: 'block', padding: 16, border: '1px solid #ccc', borderRadius: 8, textDecoration: 'none', color: 'inherit' }}
+        <main className="p-7 max-w-[1100px]">
+          {/* Page title */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="font-serif text-[26px] text-[#1C1814] leading-tight">Dashibodi</h1>
+              {cycle && (
+                <p className="text-sm text-[#9E9690] mt-0.5">
+                  Cycle {cycle.cycleNumber} — {cycle.startDate
+                    ? new Date(cycle.startDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : '—'} to {cycle.endDate
+                      ? new Date(cycle.endDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : '—'}
+                </p>
+              )}
+            </div>
+            {isOfficer && (
+              <button
+                onClick={() => navigate(`/chamas/${chamaId}/contributions/new`)}
+                className="bg-amber-600 text-white px-5 h-10 rounded-lg font-semibold text-sm hover:bg-amber-700 transition flex items-center gap-2"
               >
-                <strong>{chama.name}</strong>
-                <span style={{ marginLeft: 12, color: '#666' }}>Your role: {chama.myRole}</span>
-                <span style={{ marginLeft: 12, color: '#666' }}>KES {chama.contributionAmount.toLocaleString()}/month</span>
-              </Link>
-            ))}
+                + Rekodi Mchango
+              </button>
+            )}
           </div>
-          <button onClick={() => setShowCreateForm(true)} style={{ marginTop: 16 }}>
-            + Create Another Chama
-          </button>
-        </>
-      )}
 
-      {showCreateForm && (
-        <form onSubmit={handleCreate} style={{ marginTop: 24, padding: 16, border: '1px solid #ccc', borderRadius: 8 }}>
-          <h3>Create New Chama</h3>
-          <div><label>Name</label><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required /></div>
-          <div>
-            <label>Monthly Contribution (KES)</label>
-            <input type="number" value={form.contributionAmount} onChange={e => setForm(f => ({ ...f, contributionAmount: e.target.value }))} required min="1" step="1" />
+          {/* ── Stat cards ── */}
+          <div className="grid grid-cols-4 gap-3 mb-6">
+            {isOfficer ? (
+              <>
+                <StatCard
+                  label="MICHANGO / Contributions"
+                  value={loading ? '...' : fmt(dashboard?.cycle?.totalCollected)}
+                  sub={loading ? '' : `Cycle ${cycle?.cycleNumber} · ${dashboard?.cycle?.paidCount || 0} of ${chama?.memberCount || 0} paid`}
+                  trend={`↑ ${contributions.filter(c => c.status === 'verified').length} verified`}
+                  trendType="up"
+                />
+                <StatCard
+                  label="INASUBIRI / Pending Verify"
+                  value={loading ? '...' : pendingCount}
+                  sub="Awaiting second signature"
+                  trend={pendingCount > 0 ? 'Action required' : 'All clear ✓'}
+                  trendType={pendingCount > 0 ? 'down' : 'up'}
+                  valueColor={pendingCount > 0 ? 'text-[#B8650A]' : undefined}
+                />
+                <StatCard
+                  label="MIKOPO / Active Loans"
+                  value={loading ? '...' : dashboard?.activeLoansCount || 0}
+                  sub={dashboard?.totalOutstandingLoans ? `${fmt(dashboard.totalOutstandingLoans)} outstanding` : 'No outstanding loans'}
+                  trend={dashboard?.overdueLoans > 0 ? `${dashboard.overdueLoans} overdue` : undefined}
+                  trendType="down"
+                />
+                <StatCard
+                  label="DENI / In Arrears"
+                  value={loading ? '...' : dashboard?.membersInArrears || 0}
+                  sub={dashboard?.membersInArrears > 0 ? 'Members behind on payments' : 'All members up to date'}
+                  valueColor={dashboard?.membersInArrears > 0 ? 'text-[#C0392B]' : undefined}
+                  trend={dashboard?.membersInArrears > 0 ? '↑ Action needed' : undefined}
+                  trendType="bad"
+                />
+              </>
+            ) : (
+              /* Member view — only personal stats */
+              <>
+                <StatCard
+                  label="MY CONTRIBUTIONS"
+                  value={loading ? '...' : fmt(dashboard?.myLedger?.totalContributed)}
+                  sub="Total paid to date"
+                  trendType="up"
+                />
+                <StatCard
+                  label="MY BALANCE"
+                  value={loading ? '...' : fmt(Math.abs(dashboard?.myLedger?.balance || 0))}
+                  sub={dashboard?.myLedger?.balance > 0 ? 'In arrears' : 'Up to date ✓'}
+                  valueColor={dashboard?.myLedger?.balance > 0 ? 'text-[#C0392B]' : 'text-[#2A7A4B]'}
+                />
+                <StatCard
+                  label="CYCLE PROGRESS"
+                  value={loading ? '...' : `${cycle?.collectionRate || 0}%`}
+                  sub={`${fmt(cycle?.totalCollected)} collected`}
+                />
+                <StatCard
+                  label="MY ACTIVE LOAN"
+                  value={loading ? '...' : dashboard?.myActiveLoan ? fmt(dashboard.myActiveLoan.totalDue - dashboard.myActiveLoan.totalRepaid) : 'None'}
+                  sub={dashboard?.myActiveLoan ? 'Remaining balance' : 'No active loan'}
+                />
+              </>
+            )}
           </div>
-          <div>
-            <label>Meeting Frequency</label>
-            <select value={form.meetingFrequency} onChange={e => setForm(f => ({ ...f, meetingFrequency: e.target.value }))}>
-              <option value="weekly">Weekly</option>
-              <option value="biweekly">Bi-weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
+
+          {/* ── Main content grid ── */}
+          <div className="grid grid-cols-[1fr_320px] gap-5">
+            {/* Contributions feed */}
+            <ContributionFeed contributions={contributions} loading={loading} />
+
+            {/* Right column */}
+            <div className="flex flex-col gap-4">
+              <RotationQueue
+                members={members}
+                currentPosition={currentPosition}
+                contributionAmount={chama?.contributionAmount}
+                loading={loading}
+              />
+              <AuditFeed logs={auditLogs} loading={loading} />
+            </div>
           </div>
-          <button type="submit">Create Chama</button>
-          <button type="button" onClick={() => setShowCreateForm(false)} style={{ marginLeft: 8 }}>Cancel</button>
-        </form>
-      )}
+        </main>
+      </div>
     </div>
   );
-};
-
-export default Dashboard;
+}
