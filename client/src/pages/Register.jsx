@@ -19,7 +19,11 @@ const Register = () => {
       await register(form);
       navigate('/');
     } catch (err) {
+      console.log('Full error:', err);
+      console.log('Response:', err.response);
+      console.log('Message:', err.message);
       toast.error(err.response?.data?.error || 'Registration failed');
+
     } finally {
       setSubmitting(false);
     }

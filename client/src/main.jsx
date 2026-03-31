@@ -16,6 +16,7 @@ import './index.css'
 import { Toaster } from 'react-hot-toast';
 import { ChamaProvider } from './context/ChamaContext';
 import { useParams } from 'react-router-dom';
+import ChamaSelect from './pages/ChamaSelect';
 
 const ChamaLayout = ({ children }) => {
   const { chamaId } = useParams();
@@ -33,7 +34,8 @@ createRoot(document.getElementById('root')).render(
 
           {/* Protected routes*/}
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<ChamaSelect />} /> 
+            <Route path="/chamas/:chamaId" element={<ChamaLayout><Dashboard /></ChamaLayout>} />
             <Route path="/chamas/:chamaId" element={<ChamaLayout><ChamaDetail /></ChamaLayout> } />
             <Route path="/chamas/:chamaId/members" element={<ChamaLayout><Members /></ChamaLayout>} />
             <Route path="/chamas/:chamaId/contributions" element={<ChamaLayout><Contributions /></ChamaLayout>} />

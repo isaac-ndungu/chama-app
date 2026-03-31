@@ -50,7 +50,6 @@ app.use((req, res) => {
     res.status(404).json({ error: `Route ${req.method} ${req.path} not found` });
 });
 
-app.use('/api/auth', authRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
