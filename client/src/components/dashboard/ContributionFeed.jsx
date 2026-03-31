@@ -12,7 +12,7 @@ export default function ContributionFeed({ contributions = [], loading }) {
         return (
             <div className="bg-white border border-[#E8E4DF] rounded-2xl overflow-hidden">
                 <div className="px-5 py-4 border-b border-[#E8E4DF]">
-                    <span className="font-bold text-sm text-[#1C1814]">Michango ya Hivi Karibuni</span>
+                    <span className="font-bold text-sm text-[#1C1814]">Recents Contributions</span>
                 </div>
                 {[1, 2, 3].map(i => (
                     <div key={i} className="px-5 py-4 border-b border-[#E8E4DF] last:border-0 animate-pulse">
@@ -33,18 +33,18 @@ export default function ContributionFeed({ contributions = [], loading }) {
         <div className="bg-white border border-[#E8E4DF] rounded-2xl overflow-hidden">
             {/* Header */}
             <div className="px-5 py-4 border-b border-[#E8E4DF] flex items-center justify-between">
-                <span className="font-bold text-sm text-[#1C1814]">Michango ya Hivi Karibuni</span>
+                <span className="font-bold text-sm text-[#1C1814]">Recent Contributions</span>
                 <button
                     onClick={() => navigate(`/chamas/${chamaId}/contributions`)}
                     className="text-xs text-amber-600 border border-amber-400 px-3 py-1 rounded hover:bg-amber-50 transition"
                 >
-                    Angalia Zote →
+                    View All →
                 </button>
             </div>
 
             {/* Table header */}
             <div className="grid grid-cols-[1fr_100px_120px_90px_100px_80px] px-4 pb-2 pt-3">
-                {['Mwanachama', 'Kiasi', 'M-Pesa Ref', 'Tarehe', 'Hali', ''].map(h => (
+                {['Member', 'Amount', 'M-Pesa Ref', 'Date', 'Status', ''].map(h => (
                     <div key={h} className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9E9690]">
                         {h}
                     </div>

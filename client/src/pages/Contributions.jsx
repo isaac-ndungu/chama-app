@@ -1,353 +1,259 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useChamaContext } from '../context/ChamaContext';
-import { fetchContributions, fetchPending } from '../api/contributions';
-import ContributionForm from '../components/contributions/ContributionForm';
-import PendingVerificationQueue from '../components/contributions/PendingVerificationQueue';
-import Sidebar from '../components/layout/Sidebar';
-import TopBar from '../components/layout/TopBar';
-import { format } from 'date-fns';
+import { useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import AppLayout from '../components/layout/AppLayout';
+import MemberAvatar from '../components/dashboard/MemberAvatar';
+import StatusBadge from '../components/dashboard/StatusBadge';
+import VerifyModal from '../components/ui/VerifyModal';
+import ContributionReceipt from '../components/ui/ContributionReceipt';
+import { useContributions } from '../hooks/useContributions';
+import { useChama } from '../hooks/useChama';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import useChamaSSE from '../hooks/useChamaSSE';
 
+const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
-const StatusBadge = ({ status }) => {
-  const config = {
-    verified: {
-      dot: 'bg-emerald-500',
-      text: 'text-emerald-700',
-      bg: 'bg-emerald-50',
-      border: 'border-emerald-200',
-      label: 'VERIFIED',
-    },
-    pending: {
-      dot: 'bg-amber-500',
-      text: 'text-amber-700',
-      bg: 'bg-amber-50',
-      border: 'border-amber-200',
-      label: 'PENDING',
-    },
-    overdue: {
-      dot: 'bg-red-500',
-      text: 'text-red-700',
-      bg: 'bg-red-50',
-      border: 'border-red-200',
-      label: 'OVERDUE',
-    },
-  };
-  const s = config[status?.toLowerCase()] ?? config.pending;
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide border ${s.bg} ${s.border} ${s.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-      {s.label}
-    </span>
-  );
-};
-
-const Avatar = ({ name }) => {
-  const initials = name
-    ? name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
-    : '??';
-  const colors = [
-    'bg-amber-100 text-amber-800',
-    'bg-sky-100 text-sky-800',
-    'bg-rose-100 text-rose-800',
-    'bg-violet-100 text-violet-800',
-    'bg-teal-100 text-teal-800',
-    'bg-orange-100 text-orange-800',
-  ];
-  const color = colors[(name?.charCodeAt(0) ?? 0) % colors.length];
-  return (
-    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${color}`}>
-      {initials}
-    </div>
-  );
-};
-
-const Contributions = () => {
+export default function Contributions() {
   const { chamaId } = useParams();
-  const { can, chama } = useChamaContext();
-  const [contributions, setContributions] = useState([]);
-  const [pending, setPending] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('All Statuses');
-  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { can, role } = useChama(chamaId);
+  const { contributions, pending, loading, verify, record } = useContributions(chamaId);
 
-  const cycle = chama?.currentCycle ?? null;
-  const pendingCount = pending.length;
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [verifyTarget, setVerifyTarget] = useState(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [receipt, setReceipt] = useState(null);
+  const [shown, setShown] = useState(6);
 
-  const loadData = async () => {
+  const filtered = contributions.filter(c => {
+    const name = c.memberId?.name?.toLowerCase() || '';
+    const matchSearch = !search || name.includes(search.toLowerCase());
+    const matchStatus = !statusFilter || c.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const handleVerify = async () => {
+    if (!verifyTarget) return;
+    setVerifyLoading(true);
     try {
-      const [contribRes, pendingRes, memberRes] = await Promise.all([
-        fetchContributions(chamaId),
-        can('verify_contribution')
-          ? fetchPending(chamaId)
-          : Promise.resolve({ data: { contributions: [] } }),
-        import('../api/axios').then(m => m.default.get(`/chamas/${chamaId}/members`)),
-      ]);
-      setContributions(contribRes.data.contributions);
-      setPending(pendingRes.data.contributions);
-      setMembers(memberRes.data.members);
-    } catch {
-      toast.error('Failed to load contributions');
+      await verify(verifyTarget._id);
+      setVerifyTarget(null);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Verification failed');
     } finally {
-      setLoading(false);
+      setVerifyLoading(false);
     }
   };
 
-  useEffect(() => { loadData(); }, [chamaId]);
-
-  const filteredContributions = contributions.filter(c => {
-    const matchesSearch = !searchQuery ||
-      c.memberId?.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'All Statuses' ||
-      c.status?.toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesStatus;
-  });
-  
-  useChamaSSE(chamaId, {
-  contribution_verified: () => {
-    loadData();   // refresh the full list when any contribution is verified
-    toast.success('A contribution was just verified — feed updated');
-  }
-});
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex flex-col flex-1 min-w-0">
-          <TopBar />
-          <main className="flex-1 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-[3px] border-amber-600 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-gray-500">Loading contributions…</p>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
+  const isOfficer = can('record_contribution');
 
   return (
-    <div className="flex min-h-screen bg-[#F8F6F3]">
-      <Sidebar />
-      <div className="ml-55 flex-1 flex flex-col min-h-screen">
-        <TopBar
-          chama={chama}
-          cycle={cycle}
-          pendingCount={pendingCount}
+    <AppLayout>
+      {/* Page header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="font-serif text-[26px] text-[#1C1814]">Contributions</h1>
+          <p className="text-sm text-[#9E9690] mt-0.5">Cycle 3 · 14 Mar – 14 Apr 2024</p>
+        </div>
+        {isOfficer && (
+          <button
+            onClick={() => navigate(`/chamas/${chamaId}/contributions/new`)}
+            className="bg-amber-600 text-white h-10 px-5 rounded-lg font-semibold text-sm hover:bg-amber-700 transition flex items-center gap-2"
+          >
+            + Record Contribution
+          </button>
+        )}
+      </div>
+
+      {/* Pending verification banner */}
+      {isOfficer && pending.length > 0 && (
+        <div className="flex items-center justify-between bg-[#FEF3E2] border border-[rgba(184,101,10,0.2)] rounded-xl px-5 py-3.5 mb-5">
+          <div className="flex items-center gap-3">
+            <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5 shrink-0">
+              <path d="M10 3L17.5 16.5H2.5L10 3z" stroke="#B8650A" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M10 8v4M10 13.5v.5" stroke="#B8650A" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <div>
+              <div className="font-bold text-[13px] text-[#B8650A]">
+                {pending.length} contribution{pending.length !== 1 ? 's' : ''} awaiting verification
+              </div>
+              <div className="text-[12px] text-[#9E9690] mt-0.5">
+                Another officer must confirm these entries
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => {}}
+            className="bg-amber-600 text-white text-[12px] font-semibold px-4 h-8 rounded-lg hover:bg-amber-700 transition whitespace-nowrap"
+          >
+            Review Now →
+          </button>
+        </div>
+      )}
+
+      {/* Filters row */}
+      <div className="flex items-center gap-3 mb-5 flex-wrap">
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="h-9 px-3 border border-[#E8E4DF] rounded-lg text-[13px] text-[#1C1814] bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+        >
+          <option value="">All Statuses</option>
+          <option value="verified">Verified</option>
+          <option value="pending_verification">Pending</option>
+          <option value="overdue">Overdue</option>
+          <option value="disputed">Disputed</option>
+        </select>
+
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search member..."
+          className="h-9 px-3 border border-[#E8E4DF] rounded-lg text-[13px] bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 w-[200px]"
         />
 
-        <main className="p-7 max-w-6xl">
-          {/* Page Header */}
-          <div className="flex items-start justify-between mb-1">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-                Contributions
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                {chama?.currentCycle
-                  ? `Cycle ${chama.currentCycle.number} · ${format(new Date(chama.currentCycle.startDate), 'dd MMM')} – ${format(new Date(chama.currentCycle.endDate), 'dd MMM yyyy')}`
-                  : chama?.name}
-              </p>
-            </div>
-            {can('record_contribution') && (
-              <button
-                onClick={() => setShowForm(prev => !prev)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors duration-150"
-              >
-                <span className="text-lg leading-none">+</span>
-                Record Contribution
-              </button>
-            )}
-          </div>
-
-          {/* Contribution Form (slide-in) */}
-          {showForm && can('record_contribution') && (
-            <div className="mt-5 bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-              <ContributionForm
-                chamaId={chamaId}
-                members={members}
-                cycleId={null}
-                onSuccess={() => { loadData(); setShowForm(false); }}
-              />
-            </div>
-          )}
-
-          {/* Pending Verification Banner */}
-          {can('verify_contribution') && pending.length > 0 && (
-            <div className="mt-5 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="text-amber-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-amber-800">
-                    {pending.length} contribution{pending.length > 1 ? 's' : ''} awaiting verification
-                  </p>
-                  <p className="text-xs text-amber-700 mt-0.5">Another officer must confirm these entries</p>
-                </div>
-              </div>
-              <button className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg transition-colors duration-150 whitespace-nowrap">
-                Review Now →
-              </button>
-            </div>
-          )}
-
-          {/* Pending Verification Queue */}
-          {can('verify_contribution') && pending.length > 0 && (
-            <div className="mt-4">
-              <PendingVerificationQueue
-                chamaId={chamaId}
-                pending={pending}
-                onUpdate={loadData}
-              />
-            </div>
-          )}
-
-          {/* Filters Row */}
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
-            >
-              {['All Statuses', 'Verified', 'Pending', 'Overdue'].map(s => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search member..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400 w-52"
-              />
-            </div>
-
-            <span className="ml-auto text-sm text-gray-500">
-              Showing {filteredContributions.length} of {contributions.length}
-            </span>
-          </div>
-
-          {/* Contributions Table */}
-          <div className="mt-4 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-            {filteredContributions.length === 0 ? (
-              <div className="py-16 text-center">
-                <p className="text-gray-400 text-sm">No contributions found.</p>
-              </div>
-            ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/60">
-                    <th className="text-left text-xs font-semibold uppercase tracking-wider text-gray-500 px-5 py-3">Member</th>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wider text-gray-500 px-5 py-3">Amount</th>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wider text-gray-500 px-5 py-3">M-Pesa Ref</th>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wider text-gray-500 px-5 py-3">Date</th>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wider text-gray-500 px-5 py-3">Recorded By</th>
-                    <th className="text-left text-xs font-semibold uppercase tracking-wider text-gray-500 px-5 py-3">Status</th>
-                    <th className="px-5 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredContributions.map(c => {
-                    const status = c.status?.toLowerCase() ?? 'verified';
-                    return (
-                      <tr key={c._id} className="hover:bg-gray-50/70 transition-colors duration-100">
-                        {/* Member */}
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar name={c.memberId?.name} />
-                            <div>
-                              <p className="font-medium text-gray-900 leading-tight">{c.memberId?.name}</p>
-                              {c.memberId?.position && (
-                                <p className="text-xs text-gray-400 mt-0.5">Position {c.memberId.position}</p>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Amount */}
-                        <td className="px-5 py-4">
-                          <span className="font-bold text-gray-900">KSh {c.amount?.toLocaleString()}</span>
-                        </td>
-
-                        {/* M-Pesa Ref */}
-                        <td className="px-5 py-4">
-                          {c.mpesaRef ? (
-                            <span className="font-mono text-xs text-gray-500 tracking-wide">{c.mpesaRef}</span>
-                          ) : (
-                            <span className="text-gray-300">—</span>
-                          )}
-                        </td>
-
-                        {/* Date */}
-                        <td className="px-5 py-4 text-gray-600">
-                          {c.paymentDate
-                            ? format(new Date(c.paymentDate), 'dd MMM yyyy')
-                            : <span className="text-amber-600 font-medium">Overdue</span>}
-                        </td>
-
-                        {/* Recorded By */}
-                        <td className="px-5 py-4 text-gray-500 text-xs">
-                          {c.verifiedBy?.name
-                            ? `${c.verifiedBy.role ? c.verifiedBy.role + ' ' : ''}(${c.verifiedBy.name})`
-                            : <span className="text-gray-300">—</span>}
-                        </td>
-
-                        {/* Status */}
-                        <td className="px-5 py-4">
-                          <StatusBadge status={status} />
-                        </td>
-
-                        {/* Action */}
-                        <td className="px-5 py-4 text-right">
-                          {status === 'verified' && (
-                            <button className="px-4 py-1.5 border border-gray-200 hover:border-gray-300 text-gray-600 hover:text-gray-800 text-xs font-medium rounded-lg transition-colors duration-150">
-                              View
-                            </button>
-                          )}
-                          {status === 'pending' && can('verify_contribution') && (
-                            <button className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition-colors duration-150">
-                              Verify
-                            </button>
-                          )}
-                          {status === 'overdue' && (
-                            <button className="px-4 py-1.5 border border-gray-200 hover:border-amber-300 text-gray-600 hover:text-amber-700 text-xs font-medium rounded-lg transition-colors duration-150">
-                              Remind
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* Load More */}
-          {filteredContributions.length > 0 && (
-            <p className="mt-4 text-center text-sm text-gray-400">
-              Showing {filteredContributions.length} of {contributions.length} ·{' '}
-              <button className="text-amber-600 hover:underline font-medium">Load more</button>
-            </p>
-          )}
-        </main>
+        <span className="ml-auto text-[13px] text-[#9E9690]">
+          Showing {Math.min(shown, filtered.length)} of {filtered.length}
+        </span>
       </div>
-    </div>
-  );
-};
 
-export default Contributions;
+      {/* Table */}
+      <div className="bg-white border border-[#E8E4DF] rounded-2xl overflow-hidden">
+        {/* Column headers */}
+        <div className="grid grid-cols-[1fr_110px_130px_105px_170px_110px_90px] px-5 py-3 border-b border-[#E8E4DF]">
+          {['Member', 'Amount', 'M-Pesa Ref', 'Date', 'Recorded By', 'Status', ''].map(h => (
+            <div key={h} className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9E9690]">{h}</div>
+          ))}
+        </div>
+
+        {/* Rows */}
+        {loading ? (
+          [1, 2, 3, 4].map(i => (
+            <div key={i} className="grid grid-cols-[1fr_110px_130px_105px_170px_110px_90px] px-5 py-4 border-b border-[#E8E4DF] last:border-0 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#E8E4DF]" />
+                <div className="space-y-1.5">
+                  <div className="h-3 bg-[#E8E4DF] rounded w-28" />
+                  <div className="h-2.5 bg-[#E8E4DF] rounded w-16" />
+                </div>
+              </div>
+              {[1,2,3,4,5,6].map(j => <div key={j} className="h-3 bg-[#E8E4DF] rounded self-center" />)}
+            </div>
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="text-[#9E9690] text-sm">No contributions found</div>
+          </div>
+        ) : (
+          filtered.slice(0, shown).map(c => {
+            const isPending = c.status === 'pending_verification';
+            const isOverdue = c.status === 'overdue';
+            const isMine = c.recordedBy?._id === user?.id || c.recordedBy === user?.id;
+
+            return (
+              <div
+                key={c._id}
+                className="grid grid-cols-[1fr_110px_130px_105px_170px_110px_90px] px-5 py-4 border-b border-[#E8E4DF] last:border-0 hover:bg-[#F8F6F3] transition items-center"
+              >
+                {/* Member */}
+                <div className="flex items-center gap-2.5">
+                  <MemberAvatar name={c.memberId?.name} />
+                  <div>
+                    <div className="font-semibold text-[13px] text-[#1C1814]">{c.memberId?.name}</div>
+                    <div className="text-[11px] text-[#9E9690]">Position {c.memberId?.rotationPosition || '—'}</div>
+                  </div>
+                </div>
+
+                {/* Amount */}
+                <div className="font-bold text-[13px] text-[#1C1814]">
+                  {c.amount ? fmt(c.amount) : <span className="text-[#9E9690]">—</span>}
+                </div>
+
+                {/* M-Pesa ref */}
+                <div className="font-mono text-[11px] text-[#9E9690]">
+                  {c.mpesaRef || <span className="not-italic">Not recorded</span>}
+                </div>
+
+                {/* Date */}
+                <div className={`text-[12px] ${isOverdue ? 'text-[#C0392B] font-semibold' : 'text-[#6B6560]'}`}>
+                  {isOverdue ? 'Overdue' : fmtDate(c.paymentDate)}
+                </div>
+
+                {/* Recorded by */}
+                <div className="text-[12px] text-[#6B6560]">
+                  {c.recordedBy?.name
+                    ? `${c.recordedBy.role === 'treasurer' ? 'Treasurer' : 'Chairman'} (${c.recordedBy.name?.split(' ')[0]} ${c.recordedBy.name?.split(' ')[1]?.[0]}.)`
+                    : <span className="text-[#9E9690]">—</span>
+                  }
+                </div>
+
+                {/* Status */}
+                <div><StatusBadge status={c.status} /></div>
+
+                {/* Action */}
+                <div>
+                  {isPending && isOfficer && !isMine ? (
+                    <button
+                      onClick={() => setVerifyTarget(c)}
+                      className="bg-amber-600 text-white text-[12px] font-semibold px-4 h-8 rounded-lg hover:bg-amber-700 transition"
+                    >
+                      Verify
+                    </button>
+                  ) : isPending && isOfficer && isMine ? (
+                    <span className="text-[11px] text-[#9E9690]">Awaiting 2nd</span>
+                  ) : isOverdue ? (
+                    <button className="text-[12px] text-amber-600 border border-amber-400 px-3 h-8 rounded-lg hover:bg-amber-50 transition">
+                      Remind
+                    </button>
+                  ) : (
+                    <button className="text-[12px] text-amber-600 border border-amber-400 px-3 h-8 rounded-lg hover:bg-amber-50 transition">
+                      View
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+
+        {/* Load more */}
+        {filtered.length > shown && (
+          <div className="text-center py-4 border-t border-[#E8E4DF]">
+            <span className="text-[13px] text-[#9E9690]">
+              Showing {shown} of {filtered.length} ·{' '}
+            </span>
+            <button
+              onClick={() => setShown(s => s + 10)}
+              className="text-[13px] text-amber-600 hover:underline font-medium"
+            >
+              Load more
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Verify modal */}
+      {verifyTarget && (
+        <VerifyModal
+          contribution={verifyTarget}
+          onConfirm={handleVerify}
+          onClose={() => setVerifyTarget(null)}
+          loading={verifyLoading}
+        />
+      )}
+
+      {/* Receipt modal */}
+      {receipt && (
+        <ContributionReceipt
+          contribution={receipt}
+          recorderName={user?.name}
+          onRecordAnother={() => { setReceipt(null); navigate(`/chamas/${chamaId}/contributions/new`); }}
+          onViewAll={() => setReceipt(null)}
+          onClose={() => setReceipt(null)}
+        />
+      )}
+    </AppLayout>
+  );
+}

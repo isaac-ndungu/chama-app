@@ -86,7 +86,7 @@ export default function Dashboard() {
           {/* Page title */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="font-serif text-[26px] text-[#1C1814] leading-tight">Dashibodi</h1>
+              <h1 className="font-serif text-[26px] text-[#1C1814] leading-tight">Dashboard</h1>
               {cycle && (
                 <p className="text-sm text-[#9E9690] mt-0.5">
                   Cycle {cycle.cycleNumber} — {cycle.startDate
@@ -102,7 +102,7 @@ export default function Dashboard() {
                 onClick={() => navigate(`/chamas/${chamaId}/contributions/new`)}
                 className="bg-amber-600 text-white px-5 h-10 rounded-lg font-semibold text-sm hover:bg-amber-700 transition flex items-center gap-2"
               >
-                + Rekodi Mchango
+                + Record Contribution
               </button>
             )}
           </div>
@@ -112,14 +112,14 @@ export default function Dashboard() {
             {isOfficer ? (
               <>
                 <StatCard
-                  label="MICHANGO / Contributions"
+                  label="Contributions"
                   value={loading ? '...' : fmt(dashboard?.cycle?.totalCollected)}
                   sub={loading ? '' : `Cycle ${cycle?.cycleNumber} · ${dashboard?.cycle?.paidCount || 0} of ${chama?.memberCount || 0} paid`}
                   trend={`↑ ${contributions.filter(c => c.status === 'verified').length} verified`}
                   trendType="up"
                 />
                 <StatCard
-                  label="INASUBIRI / Pending Verify"
+                  label="Pending Verify"
                   value={loading ? '...' : pendingCount}
                   sub="Awaiting second signature"
                   trend={pendingCount > 0 ? 'Action required' : 'All clear ✓'}
@@ -127,14 +127,14 @@ export default function Dashboard() {
                   valueColor={pendingCount > 0 ? 'text-[#B8650A]' : undefined}
                 />
                 <StatCard
-                  label="MIKOPO / Active Loans"
+                  label="Active Loans"
                   value={loading ? '...' : dashboard?.activeLoansCount || 0}
                   sub={dashboard?.totalOutstandingLoans ? `${fmt(dashboard.totalOutstandingLoans)} outstanding` : 'No outstanding loans'}
                   trend={dashboard?.overdueLoans > 0 ? `${dashboard.overdueLoans} overdue` : undefined}
                   trendType="down"
                 />
                 <StatCard
-                  label="DENI / In Arrears"
+                  label="In Arrears"
                   value={loading ? '...' : dashboard?.membersInArrears || 0}
                   sub={dashboard?.membersInArrears > 0 ? 'Members behind on payments' : 'All members up to date'}
                   valueColor={dashboard?.membersInArrears > 0 ? 'text-[#C0392B]' : undefined}

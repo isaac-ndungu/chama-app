@@ -82,10 +82,10 @@ export default function ChamaSelect() {
                             {initials(user?.name)}
                         </div>
                         <h1 className="font-serif text-3xl text-[#1C1814] mb-1">
-                            Karibu, {user?.name?.split(' ')[0]}
+                            Welcome, {user?.name?.split(' ')[0]}
                         </h1>
                         <p className="text-[#6B6560] text-sm">
-                            Chagua kikundi chako / Select your chama
+                            Select your chama
                         </p>
                     </div>
 
@@ -146,7 +146,7 @@ export default function ChamaSelect() {
                                 onClick={() => setShowCreate(true)}
                                 className="w-full border border-dashed border-[#E8E4DF] rounded-xl px-5 py-4 text-sm text-[#9E9690] hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50/30 transition text-center font-medium"
                             >
-                                + Unda Kikundi Kipya / Create New Chama
+                                + Create New Chama
                             </button>
                         </div>
                     )}
@@ -163,7 +163,7 @@ export default function ChamaSelect() {
                         className="bg-white rounded-2xl p-7 w-full max-w-md shadow-2xl"
                         onClick={e => e.stopPropagation()}
                     >
-                        <h2 className="font-serif text-2xl text-[#1C1814] mb-1">Unda Kikundi</h2>
+                        <h2 className="font-serif text-2xl text-[#1C1814] mb-1">Create Chama</h2>
                         <p className="text-sm text-[#6B6560] mb-6">Create a new chama</p>
 
                         <form onSubmit={handleCreate} className="space-y-4">

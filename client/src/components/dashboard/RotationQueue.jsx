@@ -7,7 +7,7 @@ export default function RotationQueue({ members = [], currentPosition = 1, contr
         return (
             <div className="bg-white border border-[#E8E4DF] rounded-2xl p-5">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-[#9E9690] mb-3">
-                    Mzunguko / Rotation Queue
+                    Rotation Queue
                 </div>
                 <div className="space-y-2">
                     {[1, 2, 3].map(i => (
@@ -23,7 +23,7 @@ export default function RotationQueue({ members = [], currentPosition = 1, contr
     return (
         <div className="bg-white border border-[#E8E4DF] rounded-2xl p-5">
             <div className="text-[10px] font-bold uppercase tracking-widest text-[#9E9690] mb-3">
-                Mzunguko / Rotation Queue
+                Rotation Queue
             </div>
 
             <div className="space-y-1">
