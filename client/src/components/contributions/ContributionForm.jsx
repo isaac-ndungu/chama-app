@@ -10,6 +10,7 @@ const ContributionForm = ({ chamaId, members, cycleId, onSuccess }) => {
 
     const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
+    console.log('token at submit:', window.__accessToken__);
     const handleSubmit = async (e) => {
         e.preventDefault();
         const amount = parseInt(form.amount, 10);

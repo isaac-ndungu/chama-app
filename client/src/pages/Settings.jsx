@@ -120,7 +120,7 @@ export default function Settings() {
     <AppLayout>
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="font-serif text-[26px] text-[#1C1814]">Mipangilio / Settings</h1>
+          <h1 className="font-serif text-[26px] text-[#1C1814]">Settings</h1>
           <p className="text-sm text-[#9E9690] mt-0.5">
             {isChairperson ? 'Chama configuration · Chairperson access required for changes' : 'Chama configuration · View only'}
           </p>
@@ -141,14 +141,14 @@ export default function Settings() {
         {/* Chama Details section */}
         <div>
           <h2 className="text-[14px] font-bold uppercase tracking-[0.08em] text-[#9E9690] mb-4">
-            Maelezo ya Kikundi / Chama Details
+             Chama Details
           </h2>
 
           <div className="space-y-5">
             {/* Chama Name */}
             <div>
               <label className="block text-[12px] font-semibold text-[#1C1814] mb-2">
-                Jina la Kikundi / Chama Name
+                 Chama Name
               </label>
               <input
                 type="text"
@@ -164,7 +164,7 @@ export default function Settings() {
             {/* Description */}
             <div>
               <label className="block text-[12px] font-semibold text-[#1C1814] mb-2">
-                Maelezo / Description
+                  Description
               </label>
               <textarea
                 name="description"
@@ -185,14 +185,14 @@ export default function Settings() {
         {/* Contribution section */}
         <div className="pt-6 border-t border-[#E8E4DF]">
           <h2 className="text-[14px] font-bold uppercase tracking-[0.08em] text-[#9E9690] mb-4">
-            Mchango wa Kila Kila Mwezi / Monthly Contribution
+             Monthly Contribution
           </h2>
 
           <div className="grid grid-cols-2 gap-5">
             {/* Contribution Amount */}
             <div>
               <label className="block text-[12px] font-semibold text-[#1C1814] mb-2">
-                Mchango wa Kila Kila Mwezi / Monthly Contribution
+                 Monthly Contribution
               </label>
               <div className="flex items-center">
                 <span className="text-[#9E9690] text-[13px] mr-2">KSh</span>
@@ -216,7 +216,7 @@ export default function Settings() {
             {/* Meeting Frequency */}
             <div>
               <label className="block text-[12px] font-semibold text-[#1C1814] mb-2">
-                Mkutano / Meeting Frequency
+                 Meeting Frequency
               </label>
               <select
                 name="meetingFrequency"
@@ -236,12 +236,12 @@ export default function Settings() {
         {/* Loan section */}
         <div className="pt-6 border-t border-[#E8E4DF]">
           <h2 className="text-[14px] font-bold uppercase tracking-[0.08em] text-[#9E9690] mb-4">
-            Riba ya Mkopo / Default Loan Rate
+            Default Loan Rate
           </h2>
 
           <div>
             <label className="block text-[12px] font-semibold text-[#1C1814] mb-2">
-              Riba ya Mkopo (%) / Default Loan Interest Rate
+              Default Loan Interest Rate
             </label>
             <div className="flex items-center max-w-sm">
               <input
@@ -267,24 +267,24 @@ export default function Settings() {
         {/* Current Cycle section */}
         <div className="pt-6 border-t border-[#E8E4DF]">
           <h2 className="text-[14px] font-bold uppercase tracking-[0.08em] text-[#9E9690] mb-4">
-            Mzunguko wa Sasa / Current Cycle
+            Current Cycle
           </h2>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Mzunguko</div>
+              <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Cycle</div>
               <div className="text-[18px] font-serif text-[#1C1814] mt-2">
                 {dashLoading ? 'Loading...' : dashboard?.cycle?.cycleNumber ? `Cycle ${dashboard.cycle.cycleNumber}` : 'No active cycle'}
               </div>
             </div>
             <div>
-              <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Ilianza</div>
+              <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Started</div>
               <div className="text-[14px] text-[#1C1814] mt-2">
                 {dashboard?.cycle?.startDate ? new Date(dashboard.cycle.startDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
               </div>
             </div>
             <div>
-              <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Inaisha</div>
+              <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em]">Ends</div>
               <div className="text-[14px] text-[#1C1814] mt-2">
                 {dashboard?.cycle?.endDate ? new Date(dashboard.cycle.endDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
               </div>

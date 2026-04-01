@@ -2,6 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faBell,
+  faVoteYea,
+  faCheck,
+  faTimes,
+  faCreditCard,
+  faMoneyBillWave,
+  faUserPlus,
+  faBell as faBellDefault
+} from '@fortawesome/free-solid-svg-icons';
 
 
 const initials = (name) =>
@@ -21,23 +32,18 @@ const timeAgo = (date) => {
 /* Icon per notification type */
 const NotifIcon = ({ type }) => {
   const map = {
-    loan_application: { icon: '🗳️', bg: '#fef3c7', color: '#92400e' },
-    loan_approved:    { icon: '✅', bg: '#dcfce7', color: '#166534' },
-    loan_rejected:    { icon: '❌', bg: '#fee2e2', color: '#991b1b' },
-    repayment:        { icon: '💳', bg: '#dbeafe', color: '#1e40af' },
-    contribution:     { icon: '💰', bg: '#f0fdf4', color: '#166534' },
-    member_joined:    { icon: '👤', bg: '#f5f3ff', color: '#5b21b6' },
-    default:          { icon: '🔔', bg: '#f9fafb', color: '#374151' },
+    loan_application: { icon: faVoteYea, bg: 'bg-amber-100', color: 'text-amber-800' },
+    loan_approved:    { icon: faCheck, bg: 'bg-green-100', color: 'text-green-800' },
+    loan_rejected:    { icon: faTimes, bg: 'bg-red-100', color: 'text-red-800' },
+    repayment:        { icon: faCreditCard, bg: 'bg-blue-100', color: 'text-blue-800' },
+    contribution:     { icon: faMoneyBillWave, bg: 'bg-green-50', color: 'text-green-800' },
+    member_joined:    { icon: faUserPlus, bg: 'bg-purple-100', color: 'text-purple-800' },
+    default:          { icon: faBellDefault, bg: 'bg-gray-50', color: 'text-gray-700' },
   };
   const cfg = map[type] ?? map.default;
   return (
-    <div style={{
-      width: 32, height: 32, borderRadius: '50%',
-      background: cfg.bg, color: cfg.color,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 14, flexShrink: 0,
-    }}>
-      {cfg.icon}
+    <div className={`w-8 h-8 rounded-full ${cfg.bg} ${cfg.color} flex items-center justify-center text-sm flex-shrink-0`}>
+      <FontAwesomeIcon icon={cfg.icon} />
     </div>
   );
 };
@@ -94,18 +100,18 @@ const NotificationPanel = ({ chamaId, onClose, onAllRead }) => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div style={ps.panel}>
+    <div className="absolute top-[calc(100%+8px)] right-0 w-[340px] max-h-[480px] bg-white border border-gray-300 rounded-xl shadow-lg flex flex-col overflow-hidden z-[100] font-['DM_Sans',sans-serif]">
       {/* Header */}
-      <div style={ps.header}>
+      <div className="flex justify-between items-center p-[14px_16px] border-b border-gray-100">
         <div>
-          <span style={ps.title}>Notifications</span>
+          <span className="text-sm font-bold text-gray-900">Notifications</span>
           {unreadCount > 0 && (
-            <span style={ps.unreadPill}>{unreadCount} new</span>
+            <span className="ml-2 text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{unreadCount} new</span>
           )}
         </div>
         {unreadCount > 0 && (
           <button
-            style={ps.markAllBtn}
+            className="text-xs text-amber-700 bg-none border-none cursor-pointer font-medium hover:text-amber-800 disabled:opacity-50"
             onClick={markAllRead}
             disabled={markingAll}
           >
@@ -115,35 +121,34 @@ const NotificationPanel = ({ chamaId, onClose, onAllRead }) => {
       </div>
 
       {/* List */}
-      <div style={ps.list}>
+      <div className="overflow-y-auto flex-1">
         {loading && (
-          <div style={ps.emptyState}>
-            <div style={ps.spinner} />
+          <div className="flex flex-col items-center justify-center py-10 gap-2.5">
+            <div className="w-5 h-5 border-2 border-gray-300 border-t-amber-700 rounded-full animate-spin" />
           </div>
         )}
 
         {!loading && notifications.length === 0 && (
-          <div style={ps.emptyState}>
-            <span style={{ fontSize: 28 }}>🔔</span>
-            <p style={ps.emptyText}>You're all caught up!</p>
+          <div className="flex flex-col items-center justify-center py-10 gap-2.5">
+            <FontAwesomeIcon icon={faBell} className="text-2xl text-gray-400" />
+            <p className="text-sm text-gray-400 m-0">You're all caught up!</p>
           </div>
         )}
 
         {!loading && notifications.map(n => (
           <button
             key={n._id}
-            style={{
-              ...ps.notifRow,
-              background: n.read ? 'transparent' : '#fffbeb',
-            }}
+            className={`w-full flex items-start gap-3 p-[12px_16px] border-none cursor-pointer border-b border-gray-50 text-left transition-colors hover:bg-gray-50 ${
+              n.read ? 'bg-transparent' : 'bg-amber-50'
+            }`}
             onClick={() => handleNotifClick(n)}
           >
             <NotifIcon type={n.type} />
-            <div style={ps.notifBody}>
-              <p style={ps.notifMessage}>{n.message}</p>
-              <span style={ps.notifTime}>{timeAgo(n.createdAt)}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-900 m-0 leading-[1.45]">{n.message}</p>
+              <span className="text-xs text-gray-400 mt-0.5 block">{timeAgo(n.createdAt)}</span>
             </div>
-            {!n.read && <div style={ps.unreadDot} />}
+            {!n.read && <div className="w-1.5 h-1.5 bg-amber-700 rounded-full flex-shrink-0 mt-1" />}
           </button>
         ))}
       </div>
@@ -151,57 +156,7 @@ const NotificationPanel = ({ chamaId, onClose, onAllRead }) => {
   );
 };
 
-const ps = {
-  panel: {
-    position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-    width: 340, maxHeight: 480,
-    background: '#fff', border: '1.5px solid #e5e7eb',
-    borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-    display: 'flex', flexDirection: 'column',
-    overflow: 'hidden', zIndex: 100,
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  header: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '14px 16px', borderBottom: '1px solid #f3f4f6',
-  },
-  title: { fontSize: 14, fontWeight: 700, color: '#111827' },
-  unreadPill: {
-    marginLeft: 8, fontSize: 10, fontWeight: 600,
-    background: '#fef3c7', color: '#92400e',
-    padding: '2px 7px', borderRadius: 99,
-  },
-  markAllBtn: {
-    fontSize: 12, color: '#b45309', background: 'none',
-    border: 'none', cursor: 'pointer', fontWeight: 500,
-  },
-  list: { overflowY: 'auto', flex: 1 },
-  notifRow: {
-    width: '100%', display: 'flex', alignItems: 'flex-start', gap: 12,
-    padding: '12px 16px', border: 'none', cursor: 'pointer',
-    borderBottom: '1px solid #f9fafb', textAlign: 'left',
-    transition: 'background 0.15s',
-  },
-  notifBody: { flex: 1, minWidth: 0 },
-  notifMessage: { fontSize: 13, color: '#111827', margin: 0, lineHeight: 1.45 },
-  notifTime: { fontSize: 11, color: '#9ca3af', marginTop: 3, display: 'block' },
-  unreadDot: {
-    width: 7, height: 7, borderRadius: '50%',
-    background: '#b45309', flexShrink: 0, marginTop: 4,
-  },
-  emptyState: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', padding: '40px 0', gap: 10,
-  },
-  emptyText: { fontSize: 13, color: '#9ca3af', margin: 0 },
-  spinner: {
-    width: 20, height: 20, border: '2px solid #e5e7eb',
-    borderTopColor: '#b45309', borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite',
-  },
-};
-
-// TopBAr 
+// TopBar
 export default function TopBar({ chama, cycle, pendingCount }) {
   const { user } = useAuth();
   const { chamaId } = useParams();
@@ -252,7 +207,7 @@ export default function TopBar({ chama, cycle, pendingCount }) {
       {/* Right */}
       <div className="flex items-center gap-4">
         {/* Notification bell */}
-        <div style={{ position: 'relative' }}>
+        <div className="relative">
           <button
             ref={bellRef}
             className={`relative transition p-1 rounded-md ${
@@ -263,9 +218,7 @@ export default function TopBar({ chama, cycle, pendingCount }) {
             onClick={() => setShowNotifs(v => !v)}
             title={unread > 0 ? `${unread} unread notifications` : 'Notifications'}
           >
-            <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-              <path d="M10 2a6 6 0 00-6 6v2.5l-1.5 2.5A1 1 0 003.5 15H7a3 3 0 006 0h3.5a1 1 0 00.866-1.5L16 11V8a6 6 0 00-6-6z" />
-            </svg>
+            <FontAwesomeIcon icon={faBell} className="w-5 h-5" />
             {unread > 0 && (
               <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#b45309] text-white rounded-full text-[9px] font-bold flex items-center justify-center border-[1.5px] border-white">
                 {unread > 9 ? '9+' : unread}
