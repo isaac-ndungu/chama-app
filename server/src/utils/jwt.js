@@ -31,10 +31,13 @@ export const verifyRefreshToken = (token) => {
 
 // Sends the refresh token as an httpOnly cookie
 export const attachRefreshTokenCookie = (res, token) => {
+  const isProd = process.env.NODE_ENV === 'production';
+
   res.cookie('refreshToken', token, {
-    httpOnly: true,       //  XSS protection
-    secure: process.env.NODE_ENV === 'production',   
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000   // 7 days 
+    httpOnly: true,
+    secure: isProd,
+    // For cross-site auth flows (localhost:5173 -> localhost:5000 in dev, Vercel -> Railway/Vercel in prod)
+    sameSite: isProd ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000   // 7 days
   });
 };

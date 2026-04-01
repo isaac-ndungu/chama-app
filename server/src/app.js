@@ -15,9 +15,19 @@ const app = express();
 // Security headers
 app.use(helmet());
 
-// only allow your frontend origin
+// only allow your frontend origins
+const allowedOrigins = [
+    process.env.CLIENT_URL,                    // http://localhost:5173 in dev
+    process.env.CLIENT_URL_PRODUCTION          // https://chama-app.vercel.app in prod (fill with actual URL)
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.CLIENT_URL,
+    origin: (origin, callback) => {
+        // Allow requests with no origin (Postman, mobile apps, curl)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true   // required for httpOnly cookie (refresh token)
 }));
 

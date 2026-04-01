@@ -70,17 +70,26 @@ export const refresh = catchAsync(async (req, res, next) => {
         return next(new AppError('Invalid or expired refresh token', 401));
     }
 
-    const user = await User.findById(decoded.id).select('+refreshTokens');
-    if (!user || !user.refreshTokens.includes(token)) {
-        // Token reuse detected — invalidate all tokens for this user
-        if (user) { user.refreshTokens = []; await user.save({ validateBeforeSave: false }); }
-        return next(new AppError('Refresh token reuse detected — please log in again', 401));
+    // Find user only if refresh token is valid and present in DB (prevent race/VersionError)
+    const user = await User.findOne({ _id: decoded.id, refreshTokens: token }).select('+refreshTokens');
+
+    if (!user) {
+        const staleUser = await User.findById(decoded.id).select('+refreshTokens');
+        if (staleUser) {
+            await User.updateOne({ _id: staleUser._id }, { $set: { refreshTokens: [] } });
+        }
+        return next(new AppError('Invalid or expired refresh token', 401));
     }
 
-    // Rotate: remove old token, issue new pair
     const newRefreshToken = signRefreshToken(user._id);
-    user.refreshTokens = user.refreshTokens.filter(t => t !== token).concat(newRefreshToken);
-    await user.save({ validateBeforeSave: false });
+
+    const remainingTokens = user.refreshTokens.filter(t => t !== token);
+    const updatedTokens = [...remainingTokens, newRefreshToken].slice(-4);
+
+    await User.updateOne(
+        { _id: user._id, refreshTokens: token },
+        { $set: { refreshTokens: updatedTokens } }
+    );
 
     attachRefreshTokenCookie(res, newRefreshToken);
 

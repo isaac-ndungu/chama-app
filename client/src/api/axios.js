@@ -19,6 +19,7 @@ api.interceptors.request.use(
 // Response interceptor — handle expired access tokens silently
 let isRefreshing = false;
 let failedQueue = [];
+let refreshFailed = false;
 
 const processQueue = (error, token = null) => {
     failedQueue.forEach(prom => {
@@ -29,9 +30,24 @@ const processQueue = (error, token = null) => {
 };
 
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        refreshFailed = false;
+        return response;
+    },
     async (error) => {
         const originalRequest = error.config;
+
+        // If refresh itself failed, do not re-enter refresh loop
+        const isRefreshCall = originalRequest?.url?.includes('/auth/refresh');
+        if (isRefreshCall) {
+            refreshFailed = true;
+            window.__accessToken__ = null;
+            return Promise.reject(error);
+        }
+
+        if (refreshFailed) {
+            return Promise.reject(error);
+        }
 
         if (error.response?.status === 401 && !originalRequest._retry) {
             if (isRefreshing) {
@@ -48,16 +64,18 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const res = await axios.post('/auth/refresh', {}, { withCredentials: true });
+                const res = await api.post('/auth/refresh');
                 const newToken = res.data.accessToken;
+                refreshFailed = false;
                 window.__accessToken__ = newToken;    // update in-memory store
                 processQueue(null, newToken);
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
                 return api(originalRequest);
             } catch (refreshError) {
+                refreshFailed = true;
                 processQueue(refreshError, null);
                 window.__accessToken__ = null;
-                window.location.href = '/login';     // session truly expired
+                // Let AuthContext handle redirect from 401 / no user state
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
