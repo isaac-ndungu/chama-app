@@ -3,9 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+import AppLayout from '../components/layout/AppLayout';
 
-import Sidebar from '../components/layout/Sidebar';
-import TopBar from '../components/layout/TopBar';
 import StatCard from '../components/dashboard/StatCard';
 import ContributionFeed from '../components/dashboard/ContributionFeed';
 import RotationQueue from '../components/dashboard/RotationQueue';
@@ -72,17 +71,7 @@ export default function Dashboard() {
   const currentPosition = cycle?.currentPosition || 1;
 
   return (
-    <div className="flex min-h-screen bg-[#F8F6F3]">
-      <Sidebar />
-
-      <div className="ml-55 flex-1 flex flex-col min-h-screen">
-        <TopBar
-          chama={chama}
-          cycle={cycle}
-          pendingCount={pendingCount}
-        />
-
-        <main className="p-7 max-w-6xl">
+    <AppLayout>
           {/* Page title */}
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -187,8 +176,6 @@ export default function Dashboard() {
               <AuditFeed logs={auditLogs} loading={loading} />
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+  </AppLayout>
   );
 }

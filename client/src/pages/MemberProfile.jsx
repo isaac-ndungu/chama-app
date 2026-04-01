@@ -225,9 +225,7 @@ export default function MemberProfile() {
               Actions
             </h3>
             <div className="space-y-2">
-              <button className="w-full py-2 text-[12px] text-amber-600 border border-amber-400 rounded-lg hover:bg-amber-50 transition font-medium">
-                Send Message
-              </button>
+              
               <button className="w-full py-2 text-[12px] text-amber-600 border border-amber-400 rounded-lg hover:bg-amber-50 transition font-medium">
                 View Ledger
               </button>

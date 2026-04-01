@@ -80,7 +80,7 @@ export default function Sidebar() {
               {currentChama?.name || 'Loading...'}
             </div>
             <div className="text-[10px] text-white/40 mt-0.5">
-              {currentChama?.memberCount || '—'} members · Cycle {currentChama?.currentCycle || '—'}
+              {membership || 'Member'}
             </div>
           </div>
           <span className="text-white/40 text-xs ml-2">⌄</span>

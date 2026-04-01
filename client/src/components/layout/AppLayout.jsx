@@ -17,7 +17,7 @@ export default function AppLayout({ children }) {
       <Sidebar />
       <div className="ml-[220px] flex-1 flex flex-col min-h-screen">
         <TopBar chama={chama} cycle={cycle} pendingCount={pendingCount} />
-        <main className="flex-1 p-7 max-w-[1100px] w-full">
+        <main className="flex-1 p-7 max-w-6xl w-full">
           {children}
         </main>
       </div>

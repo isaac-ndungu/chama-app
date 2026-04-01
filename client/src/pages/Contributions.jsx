@@ -83,17 +83,9 @@ export default function Contributions() {
               <div className="font-bold text-[13px] text-[#B8650A]">
                 {pending.length} contribution{pending.length !== 1 ? 's' : ''} awaiting verification
               </div>
-              <div className="text-[12px] text-[#9E9690] mt-0.5">
-                Another officer must confirm these entries
-              </div>
             </div>
           </div>
-          <button
-            onClick={() => {}}
-            className="bg-amber-600 text-white text-[12px] font-semibold px-4 h-8 rounded-lg hover:bg-amber-700 transition whitespace-nowrap"
-          >
-            Review Now →
-          </button>
+          
         </div>
       )}
 

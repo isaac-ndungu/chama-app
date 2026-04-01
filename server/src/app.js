@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
+// import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import chamaRoutes from './routes/chamas.js';
@@ -15,10 +15,9 @@ const app = express();
 // Security headers
 app.use(helmet());
 
-// only allow your frontend origins
 const allowedOrigins = [
-    process.env.CLIENT_URL,                    // http://localhost:5173 in dev
-    process.env.CLIENT_URL_PRODUCTION          // https://chama-app.vercel.app in prod (fill with actual URL)
+    process.env.CLIENT_URL,                    
+    process.env.CLIENT_URL_PRODUCTION          
 ].filter(Boolean);
 
 app.use(cors({
