@@ -30,6 +30,7 @@ app.use(cors({
     },
     credentials: true   // required for httpOnly cookie (refresh token)
 }));
+app.options('*', cors());
 
 // rate limiting
 // const limiter = rateLimit({
