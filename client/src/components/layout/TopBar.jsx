@@ -199,7 +199,7 @@ function NotificationPanel({ chamaId, currentUserId, onClose, onMarkAllRead }) {
                 <span className="text-[11px] text-[#9E9690] mt-0.5 block">{timeAgo(item.createdAt)}</span>
               </div>
               {isUnread && (
-                <div className="w-2 h-2 bg-amber-600 rounded-full flex-shrink-0 mt-1" />
+                <div className="w-2 h-2 bg-amber-600 rounded-full shrink-0 mt-1" />
               )}
             </button>
           );
@@ -285,7 +285,7 @@ export default function TopBar({ chama, cycle, pendingCount }) {
               <path d="M10 2a6 6 0 00-6 6v2.586l-1.707 1.707A1 1 0 003 14h14a1 1 0 00.707-1.707L16 10.586V8a6 6 0 00-6-6zM10 18a2 2 0 01-2-2h4a2 2 0 01-2 2z" />
             </svg>
             {unread > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-amber-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center border-[1.5px] border-white px-0.5">
+              <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 bg-amber-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center border-[1.5px] border-white px-0.5">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}
