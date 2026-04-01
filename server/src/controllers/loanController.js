@@ -163,11 +163,7 @@ export const listLoans = catchAsync(async (req, res) => {
   const query = { chamaId: req.params.chamaId };
   if (status) query.status = status;
 
-  // Members only see their own loans
-  if (req.membership.role === 'member') {
-    query.borrowerId = req.user._id;
-  }
-
+  // All authenticated members can see all loans for transparency and voting
   const loans = await Loan.find(query)
     .populate('borrowerId', 'name')
     .populate('requestedBy', 'name')

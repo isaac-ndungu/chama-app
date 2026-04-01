@@ -46,6 +46,7 @@ router.get('/', catchAsync(async (req, res) => {
         }
 
         cycleData = {
+            _id: activeCycle._id,
             cycleNumber: activeCycle.cycleNumber,
             potRecipient: activeCycle.potRecipientId,
             currentPosition,

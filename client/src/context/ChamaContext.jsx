@@ -7,7 +7,7 @@ const ROLE_PERMISSIONS = {
     record_contribution: ['chairperson', 'treasurer'],
     verify_contribution: ['chairperson', 'treasurer'],
     dispute_contribution: ['chairperson', 'treasurer'],
-    apply_for_loan: ['chairperson', 'treasurer'],
+    apply_for_loan: ['chairperson', 'treasurer', 'member'],
     vote_on_loan: ['chairperson', 'treasurer', 'member'],
     record_repayment: ['chairperson', 'treasurer'],
     view_full_audit: ['chairperson', 'treasurer'],

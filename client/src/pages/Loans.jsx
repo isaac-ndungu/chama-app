@@ -220,7 +220,7 @@ export default function Loans() {
             {activeLoans.length} active · {fmt(totalOutstanding)} outstanding
           </p>
         </div>
-        {isOfficer && (
+        {can('apply_for_loan') && (
           <button
             onClick={() => setShowApplicationModal(true)}
             className="bg-amber-600 text-white h-10 px-5 rounded-lg font-semibold text-sm hover:bg-amber-700 transition"
