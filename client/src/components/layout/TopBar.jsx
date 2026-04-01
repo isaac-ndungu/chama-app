@@ -148,7 +148,7 @@ const NotificationPanel = ({ chamaId, onClose, onAllRead }) => {
               <p className="text-sm text-gray-900 m-0 leading-[1.45]">{n.message}</p>
               <span className="text-xs text-gray-400 mt-0.5 block">{timeAgo(n.createdAt)}</span>
             </div>
-            {!n.read && <div className="w-1.5 h-1.5 bg-amber-700 rounded-full flex-shrink-0 mt-1" />}
+            {!n.read && <div className="w-1.5 h-1.5 bg-amber-700 rounded-full shrink-0 mt-1" />}
           </button>
         ))}
       </div>
