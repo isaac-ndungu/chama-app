@@ -18,31 +18,46 @@ const userSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: [true, 'Phone number is required'],
-        match: [/^(\+254|0)[17]\d{8}$/, 'Enter a valid Kenyan phone number']
+        required: function () {
+            return !this.googleId;
+        },
+        validate: {
+            validator: function (v) {
+                // Skip validation if empty/not provided
+                if (!v || v === '') return true;
+                return /^(\+254|0)[17]\d{8}$/.test(v);
+            },
+            message: 'Enter a valid Kenyan phone number'
+        }
     },
     password: {
         type: String,
-        required: [true, 'Password is required'],
         minlength: [8, 'Password must be at least 8 characters'],
-        select: false   
+        select: false
+    },
+    googleId: {
+        type: String,
+        select: false
+    },
+    avatar: {
+        type: String,
     },
     refreshTokens: {
         type: [String],
         default: [],
-        select: false  
+        select: false
     }
 }, { timestamps: true });
 
 // Hash password
 userSchema.pre('save', async function () {
-  if (!this.isModified('password')) return;
-  this.password = await bcrypt.hash(this.password, 12);
+    if (!this.isModified('password')) return;
+    this.password = await bcrypt.hash(this.password, 12);
 });
 
 // instance method available on each document
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+    return bcrypt.compare(candidatePassword, this.password);
 };
 
 export default mongoose.model('User', userSchema);

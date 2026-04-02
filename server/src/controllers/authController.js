@@ -6,53 +6,58 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken, attachRefreshTok
 export const register = catchAsync(async (req, res, next) => {
     const { name, email, phone, password } = req.body;
 
-    // Check duplicate email before attempting to create
     const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) return next(new AppError('An account with this email already exists', 409));
+    if (existingUser) {
+        // If they exist via Google, tell them to use Google
+        if (existingUser.googleId && !existingUser.password) {
+            return next(new AppError('This email is linked to a Google account. Please sign in with Google.', 409));
+        }
+        return next(new AppError('An account with this email already exists', 409));
+    }
 
     const user = await User.create({ name, email, phone, password });
 
-    // Issue tokens 
-    const accessToken = signAccessToken(user._id);
+    const accessToken  = signAccessToken(user._id);
     const refreshToken = signRefreshToken(user._id);
 
-    // Store refresh token hash server-side 
     user.refreshTokens = [refreshToken];
     await user.save({ validateBeforeSave: false });
 
     attachRefreshTokenCookie(res, refreshToken);
-
     res.status(201).json({
         accessToken,
-        user: {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone
-        }
+        user: { id: user._id, name: user.name, email: user.email, phone: user.phone }
     });
 });
-
 
 export const login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
     if (!email || !password) return next(new AppError('Email and password required', 400));
 
-    // Explicitly select password — it's excluded by default
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password +refreshTokens');
-    if (!user || !(await user.comparePassword(password))) {
-        return next(new AppError('Invalid email or password', 401));   // same message — no enumeration
+    // Select password + googleId 
+    const user = await User.findOne({ email: email.toLowerCase() })
+        .select('+password +refreshTokens +googleId');
+
+    if (!user) {
+        return next(new AppError('Invalid email or password', 401));
     }
 
-    const accessToken = signAccessToken(user._id);
+    // Google-only account — no password set
+    if (!user.password) {
+        return next(new AppError('This account uses Google sign-in. Please use the "Sign in with Google" button.', 401));
+    }
+
+    if (!(await user.comparePassword(password))) {
+        return next(new AppError('Invalid email or password', 401));
+    }
+
+    const accessToken  = signAccessToken(user._id);
     const refreshToken = signRefreshToken(user._id);
 
-    // Append new refresh token
     user.refreshTokens = [...(user.refreshTokens || []).slice(-4), refreshToken];
     await user.save({ validateBeforeSave: false });
 
     attachRefreshTokenCookie(res, refreshToken);
-
     res.json({
         accessToken,
         user: { id: user._id, name: user.name, email: user.email, phone: user.phone }
@@ -70,10 +75,11 @@ export const refresh = catchAsync(async (req, res, next) => {
         return next(new AppError('Invalid or expired refresh token', 401));
     }
 
-    // Find user only if refresh token is valid and present in DB (prevent race/VersionError)
-    const user = await User.findOne({ _id: decoded.id, refreshTokens: token }).select('+refreshTokens');
+    const user = await User.findOne({ _id: decoded.id, refreshTokens: token })
+        .select('+refreshTokens');
 
     if (!user) {
+        // Token reuse detected — wipe all refresh tokens for this user
         const staleUser = await User.findById(decoded.id).select('+refreshTokens');
         if (staleUser) {
             await User.updateOne({ _id: staleUser._id }, { $set: { refreshTokens: [] } });
@@ -81,10 +87,9 @@ export const refresh = catchAsync(async (req, res, next) => {
         return next(new AppError('Invalid or expired refresh token', 401));
     }
 
-    const newRefreshToken = signRefreshToken(user._id);
-
-    const remainingTokens = user.refreshTokens.filter(t => t !== token);
-    const updatedTokens = [...remainingTokens, newRefreshToken].slice(-4);
+    const newRefreshToken  = signRefreshToken(user._id);
+    const remainingTokens  = user.refreshTokens.filter(t => t !== token);
+    const updatedTokens    = [...remainingTokens, newRefreshToken].slice(-4);
 
     await User.updateOne(
         { _id: user._id, refreshTokens: token },
@@ -92,7 +97,6 @@ export const refresh = catchAsync(async (req, res, next) => {
     );
 
     attachRefreshTokenCookie(res, newRefreshToken);
-
     res.json({ accessToken: signAccessToken(user._id) });
 });
 

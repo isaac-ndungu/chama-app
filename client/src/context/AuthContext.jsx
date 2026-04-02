@@ -1,28 +1,25 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { loginUser, registerUser, logoutUser, silentRefresh } from '../api/auth';
-import toast from 'react-hot-toast';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);  // true until silent refresh completes
+    const [loading, setLoading] = useState(true);
 
-    //  try to restore session via refresh token cookie on app mount
+    // Try to restore session via refresh token cookie on app mount
     useEffect(() => {
         const restoreSession = async () => {
             try {
                 const res = await silentRefresh();
                 window.__accessToken__ = res.data.accessToken;
-                // Fetch user profile using the new access token
                 const { default: api } = await import('../api/axios');
-                const profileRes = await api.get('/auth/me');  
+                const profileRes = await api.get('/auth/me');
                 setUser(profileRes.data.user);
             } catch {
-                // No valid refresh token, user must log in
                 setUser(null);
             } finally {
-                setLoading(false);  // unblock ProtectedRoute regardless of outcome
+                setLoading(false);
             }
         };
         restoreSession();
@@ -42,6 +39,12 @@ export const AuthProvider = ({ children }) => {
         return res.data;
     };
 
+    // Used by AuthCallback after Google OAuth — sets token + user atomically
+    const loginWithToken = (accessToken, userData) => {
+        window.__accessToken__ = accessToken;
+        setUser(userData);
+    };
+
     const logout = async () => {
         try {
             await logoutUser();
@@ -52,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, register, logout, loginWithToken }}>
             {children}
         </AuthContext.Provider>
     );

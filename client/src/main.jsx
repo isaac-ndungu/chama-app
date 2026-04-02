@@ -20,6 +20,7 @@ import { Toaster } from 'react-hot-toast';
 import { ChamaProvider } from './context/ChamaContext';
 import { useParams } from 'react-router-dom';
 import ChamaSelect from './pages/ChamaSelect';
+import AuthCallback from './pages/AuthCallback';
 
 const ChamaLayout = ({ children }) => {
   const { chamaId } = useParams();
@@ -34,6 +35,7 @@ createRoot(document.getElementById('root')).render(
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
 
           {/* Protected routes*/}
           <Route element={<ProtectedRoute />}>

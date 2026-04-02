@@ -1,16 +1,22 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 // import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
+import './config/passport.js';
 import authRoutes from './routes/auth.js';
 import chamaRoutes from './routes/chamas.js';
+import passport from 'passport';
+import { configurePassport } from './config/passport.js';
 
-dotenv.config();
 
 const app = express();
+
+configurePassport();
+app.use(passport.initialize());
+
 
 // Security headers
 app.use(helmet());
