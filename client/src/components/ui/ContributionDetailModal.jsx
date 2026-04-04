@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import StatusBadge from '../dashboard/StatusBadge';
 
 const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
@@ -29,8 +30,7 @@ export default function ContributionDetailModal({ contribution, members = [], on
     const isPending = c.status === 'pending_verification';
     const isDisputed = c.status === 'disputed';
 
-    // Look up a user's chama role from the members list since
-    // recordedBy/verifiedBy are populated from User which has no role field
+    // Look up a user's chama role from the members list 
     const getMemberRole = (userId) => {
         if (!userId) return '';
         const id = userId?._id || userId;
@@ -160,6 +160,7 @@ export default function ContributionDetailModal({ contribution, members = [], on
                                 isVerified ? `Verified by: ${c.verifiedBy?.name}${verifierRole ? ` (${formatRole(verifierRole)})` : ''}` : '',
                             ].filter(Boolean).join('\n');
                             navigator.clipboard.writeText(text);
+                            toast.success('Receipt copied to clipboard')
                         }}
                         className="flex-1 h-10 bg-amber-600 text-white rounded-lg text-[13px] font-semibold hover:bg-amber-700 transition"
                     >
