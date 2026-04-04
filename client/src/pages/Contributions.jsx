@@ -20,7 +20,8 @@ export default function Contributions() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { can } = useChama(chamaId);
-  const { contributions, pending, loading, verify } = useContributions(chamaId);
+  const isOfficer = can('record_contribution');
+  const { contributions, pending, loading, verify } = useContributions(chamaId, isOfficer);
   const { data: dashboard, loading: dashLoading } = useDashboard(chamaId);
 
   const [search, setSearch] = useState('');
@@ -52,7 +53,7 @@ export default function Contributions() {
     }
   };
 
-  const isOfficer = can('record_contribution');
+  
 
   const cycleLabel = () => {
     if (dashLoading) return 'Loading cycle...';
