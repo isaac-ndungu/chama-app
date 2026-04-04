@@ -60,7 +60,7 @@ export const verifyContribution = catchAsync(async (req, res, next) => {
 
     broadcastToChama(chamaId, 'contribution_verified', {
         contributionId: contribution._id,
-        memberName: req.user.name,  
+        memberName: req.user.name,
         amount: contribution.amount,
         verifiedAt: contribution.verifiedAt
     });
@@ -112,11 +112,13 @@ export const listContributions = catchAsync(async (req, res) => {
     if (cycleId) query.cycleId = cycleId;
     if (status) query.status = status;
 
-    // Members can only see their own contributions
-    if (req.membership.role === 'member') {
-        query.memberId = req.user._id;
-    } else if (memberId) {
+
+    if (memberId) {
         query.memberId = memberId;
+    }
+    // Members can only see verified  contributions 
+    if (req.membership.role === 'member') {
+        query.status = 'verified';
     }
 
     const contributions = await Contribution.find(query)

@@ -9,12 +9,12 @@ const router = Router({ mergeParams: true });
 // Export PDF route 
 router.get('/export-pdf', catchAsync(async (req, res) => {
     const { chamaId } = req.params;
-    const { role } = req.membership;
+    // const { role } = req.membership;
     const { from, to, action, member } = req.query;
 
     const query = { chamaId };
     
-    if (role === 'member') query.actorId = req.user._id;
+    // if (role === 'member') query.actorId = req.user._id;
 
     if (from || to) {
         query.createdAt = {};
@@ -123,13 +123,13 @@ router.get('/export-pdf', catchAsync(async (req, res) => {
 // Main audit log route
 router.get('/', catchAsync(async (req, res) => {
     const { chamaId } = req.params;
-    const { role } = req.membership;
+    // const { role } = req.membership;
     const { limit = 50, skip = 0, from, to, action, member } = req.query;
 
     const query = { chamaId };
     
     // Members only see their own actions
-    if (role === 'member') query.actorId = req.user._id;
+    // if (role === 'member') query.actorId = req.user._id;
 
     // Date filters
     if (from || to) {
