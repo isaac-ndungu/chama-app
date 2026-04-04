@@ -4,6 +4,12 @@ const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
 const fmtDt = (d) => d ? new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 const fmtDay = (d) => d ? new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
+// Capitalises first letter of any role string
+const formatRole = (role) => {
+    if (!role) return '';
+    return role.charAt(0).toUpperCase() + role.slice(1);
+};
+
 function Row({ label, children }) {
     return (
         <div className="flex justify-between items-start py-3 border-b border-[#F8F6F3] last:border-0">
@@ -15,13 +21,28 @@ function Row({ label, children }) {
     );
 }
 
-export default function ContributionDetailModal({ contribution, onClose }) {
+export default function ContributionDetailModal({ contribution, members = [], onClose }) {
     if (!contribution) return null;
 
     const c = contribution;
     const isVerified = c.status === 'verified';
     const isPending = c.status === 'pending_verification';
     const isDisputed = c.status === 'disputed';
+
+    // Look up a user's chama role from the members list since
+    // recordedBy/verifiedBy are populated from User which has no role field
+    const getMemberRole = (userId) => {
+        if (!userId) return '';
+        const id = userId?._id || userId;
+        const match = members.find(m => {
+            const uid = m.userId?._id || m.userId;
+            return uid?.toString() === id?.toString();
+        });
+        return match?.role || '';
+    };
+
+    const recorderRole = getMemberRole(c.recordedBy);
+    const verifierRole = getMemberRole(c.verifiedBy);
 
     return (
         <div
@@ -50,7 +71,7 @@ export default function ContributionDetailModal({ contribution, onClose }) {
                 {/* Body */}
                 <div className="px-6 py-4">
 
-                    {/* Member section */}
+                    {/* Member */}
                     <div className="mb-4 pb-4 border-b border-[#F8F6F3]">
                         <div className="text-[9px] font-bold uppercase tracking-widest text-[#9E9690] mb-3">Member</div>
                         <div className="flex items-center gap-3">
@@ -76,7 +97,7 @@ export default function ContributionDetailModal({ contribution, onClose }) {
                         <Row label="Payment Date">{fmtDay(c.paymentDate)}</Row>
                         <Row label="Recorded By">
                             {c.recordedBy?.name
-                                ? `${c.recordedBy.name} (${c.recordedBy.role === 'treasurer' ? 'Treasurer' : 'Chairman'})`
+                                ? `${c.recordedBy.name}${recorderRole ? ` (${formatRole(recorderRole)})` : ''}`
                                 : '—'}
                         </Row>
                         <Row label="Recorded At">{fmtDt(c.recordedAt || c.createdAt)}</Row>
@@ -85,7 +106,7 @@ export default function ContributionDetailModal({ contribution, onClose }) {
                             <>
                                 <Row label="Verified By">
                                     {c.verifiedBy?.name
-                                        ? `${c.verifiedBy.name} (${c.verifiedBy.role === 'treasurer' ? 'Treasurer' : 'Chairman'})`
+                                        ? `${c.verifiedBy.name}${verifierRole ? ` (${formatRole(verifierRole)})` : ''}`
                                         : '—'}
                                 </Row>
                                 <Row label="Verified At">{fmtDt(c.verifiedAt)}</Row>
@@ -99,20 +120,18 @@ export default function ContributionDetailModal({ contribution, onClose }) {
                         )}
                     </div>
 
-                    {/* Status note */}
+                    {/* Status notes */}
                     {isPending && (
                         <div className="bg-[#FEF3E2] border border-[rgba(184,101,10,0.2)] rounded-lg px-4 py-3 mb-4 text-[12px] text-[#B8650A]">
                             ⏳ This contribution is awaiting verification by a second officer.
                             It will not count toward financial totals until confirmed.
                         </div>
                     )}
-
                     {isVerified && (
                         <div className="bg-[#EAF5EE] border border-[rgba(42,122,75,0.2)] rounded-lg px-4 py-3 mb-4 text-[12px] text-[#2A7A4B]">
                             ✓ This contribution has been verified and is included in the group ledger.
                         </div>
                     )}
-
                     {isDisputed && (
                         <div className="bg-[#FFF0EF] border border-[rgba(192,57,43,0.2)] rounded-lg px-4 py-3 mb-4 text-[12px] text-[#C0392B]">
                             ⚠ This contribution has been flagged as disputed and requires officer review.
@@ -137,8 +156,8 @@ export default function ContributionDetailModal({ contribution, onClose }) {
                                 `M-Pesa Ref: ${c.mpesaRef}`,
                                 `Date: ${fmtDay(c.paymentDate)}`,
                                 `Status: ${c.status}`,
-                                `Recorded by: ${c.recordedBy?.name}`,
-                                isVerified ? `Verified by: ${c.verifiedBy?.name}` : '',
+                                `Recorded by: ${c.recordedBy?.name}${recorderRole ? ` (${formatRole(recorderRole)})` : ''}`,
+                                isVerified ? `Verified by: ${c.verifiedBy?.name}${verifierRole ? ` (${formatRole(verifierRole)})` : ''}` : '',
                             ].filter(Boolean).join('\n');
                             navigator.clipboard.writeText(text);
                         }}

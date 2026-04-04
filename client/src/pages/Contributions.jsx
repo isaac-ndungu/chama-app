@@ -10,9 +10,11 @@ import { useContributions } from '../hooks/useContributions';
 import { useDashboard } from '../hooks/useDashboard';
 import { useChama } from '../hooks/useChama';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
+import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 
-const fmt    = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
+const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
 export default function Contributions() {
@@ -21,16 +23,25 @@ export default function Contributions() {
   const { user } = useAuth();
   const { can } = useChama(chamaId);
   const isOfficer = can('record_contribution');
+
   const { contributions, pending, loading, verify } = useContributions(chamaId, isOfficer);
   const { data: dashboard, loading: dashLoading } = useDashboard(chamaId);
 
+  const [members, setMembers] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [verifyTarget, setVerifyTarget] = useState(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [receipt, setReceipt] = useState(null);
-  const [viewTarget, setViewTarget] = useState(null);   // ← new
+  const [viewTarget, setViewTarget] = useState(null);
   const [shown, setShown] = useState(6);
+
+  // Load members so the detail modal can resolve roles
+  useEffect(() => {
+    api.get(`/chamas/${chamaId}/members`)
+      .then(res => setMembers(res.data.members || []))
+      .catch(() => { });
+  }, [chamaId]);
 
   const filtered = contributions.filter(c => {
     const name = c.memberId?.name?.toLowerCase() || '';
@@ -52,8 +63,6 @@ export default function Contributions() {
       setVerifyLoading(false);
     }
   };
-
-  
 
   const cycleLabel = () => {
     if (dashLoading) return 'Loading cycle...';
@@ -87,8 +96,8 @@ export default function Contributions() {
         <div className="flex items-center justify-between bg-[#FEF3E2] border border-[rgba(184,101,10,0.2)] rounded-xl px-5 py-3.5 mb-5">
           <div className="flex items-center gap-3">
             <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5 shrink-0">
-              <path d="M10 3L17.5 16.5H2.5L10 3z" stroke="#B8650A" strokeWidth="1.5" strokeLinejoin="round"/>
-              <path d="M10 8v4M10 13.5v.5" stroke="#B8650A" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M10 3L17.5 16.5H2.5L10 3z" stroke="#B8650A" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M10 8v4M10 13.5v.5" stroke="#B8650A" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <div>
               <div className="font-bold text-[13px] text-[#B8650A]">
@@ -141,7 +150,7 @@ export default function Contributions() {
         </div>
 
         {loading ? (
-          [1,2,3,4].map(i => (
+          [1, 2, 3, 4].map(i => (
             <div key={i} className="grid grid-cols-[1fr_110px_130px_105px_170px_110px_90px] px-5 py-4 border-b border-[#E8E4DF] last:border-0 animate-pulse">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-[#E8E4DF]" />
@@ -150,7 +159,7 @@ export default function Contributions() {
                   <div className="h-2.5 bg-[#E8E4DF] rounded w-16" />
                 </div>
               </div>
-              {[1,2,3,4,5,6].map(j => <div key={j} className="h-3 bg-[#E8E4DF] rounded self-center" />)}
+              {[1, 2, 3, 4, 5, 6].map(j => <div key={j} className="h-3 bg-[#E8E4DF] rounded self-center" />)}
             </div>
           ))
         ) : filtered.length === 0 ? (
@@ -159,7 +168,16 @@ export default function Contributions() {
           filtered.slice(0, shown).map(c => {
             const isPending = c.status === 'pending_verification';
             const isOverdue = c.status === 'overdue';
-            const isMine    = c.recordedBy?._id === user?.id || c.recordedBy === user?.id;
+            const isMine = c.recordedBy?._id === user?.id || c.recordedBy === user?.id;
+
+            // Resolve recorder's chama role from the members list
+            const recorderMember = members.find(m => {
+              const uid = m.userId?._id || m.userId;
+              return uid?.toString() === c.recordedBy?._id?.toString();
+            });
+            const recorderRoleLabel = recorderMember?.role
+              ? recorderMember.role.charAt(0).toUpperCase() + recorderMember.role.slice(1)
+              : '';
 
             return (
               <div
@@ -188,7 +206,7 @@ export default function Contributions() {
 
                 <div className="text-[12px] text-[#6B6560]">
                   {c.recordedBy?.name
-                    ? `${c.recordedBy.role === 'treasurer' ? 'Treasurer' : 'Chairman'} (${c.recordedBy.name?.split(' ')[0]} ${c.recordedBy.name?.split(' ')[1]?.[0]}.)`
+                    ? `${recorderRoleLabel ? recorderRoleLabel + ' ' : ''}(${c.recordedBy.name?.split(' ')[0]} ${c.recordedBy.name?.split(' ')[1]?.[0]}.)`
                     : <span className="text-[#9E9690]">—</span>}
                 </div>
 
@@ -209,7 +227,6 @@ export default function Contributions() {
                       Remind
                     </button>
                   ) : (
-                    // ← View button now opens the detail modal
                     <button
                       onClick={() => setViewTarget(c)}
                       className="text-[12px] text-amber-600 border border-amber-400 px-3 h-8 rounded-lg hover:bg-amber-50 transition"
@@ -252,8 +269,10 @@ export default function Contributions() {
         />
       )}
       {viewTarget && (
+        // Pass members so the modal can resolve chama roles for recordedBy/verifiedBy
         <ContributionDetailModal
           contribution={viewTarget}
+          members={members}
           onClose={() => setViewTarget(null)}
         />
       )}

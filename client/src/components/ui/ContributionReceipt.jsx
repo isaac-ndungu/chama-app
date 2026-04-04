@@ -1,16 +1,16 @@
-import StatusBadge from "../dashboard/StatusBadge";
+import StatusBadge from '../dashboard/StatusBadge';
 
 const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
-export default function ContributionReceipt({ contribution, recorderName, onRecordAnother, onViewAll, onClose }) {
-  if (!contribution) return null;
+// Capitalises any role string rather than hardcoding specific values
+const roleLabel = (role) => {
+  if (!role) return 'Officer';
+  return role.charAt(0).toUpperCase() + role.slice(1);
+};
 
-  const roleLabel = (role) => {
-    if (role === 'chairperson') return 'Chairperson';
-    if (role === 'treasurer') return 'Treasurer';
-    return 'Officer';
-  };
+export default function ContributionReceipt({ contribution, recorderName, recorderRole, onRecordAnother, onViewAll, onClose }) {
+  if (!contribution) return null;
 
   return (
     <div className="fixed inset-0 bg-[#1C1814]/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -45,12 +45,13 @@ export default function ContributionReceipt({ contribution, recorderName, onReco
             <span className="text-[#1C1814]">{fmtDate(contribution.paymentDate)}</span>
 
             <span className="text-[#9E9690]">Recorded by</span>
-            <span className="text-[#1C1814]">{recorderName} ({roleLabel(contribution.recordedByRole)})</span>
+            {/* recorderRole is passed from the parent which has access to the members list */}
+            <span className="text-[#1C1814]">
+              {recorderName}{recorderRole ? ` (${roleLabel(recorderRole)})` : ''}
+            </span>
 
             <span className="text-[#9E9690]">Status</span>
-            <span>
-              <StatusBadge status="pending_verification" />
-            </span>
+            <span><StatusBadge status="pending_verification" /></span>
           </div>
         </div>
 
@@ -63,7 +64,7 @@ export default function ContributionReceipt({ contribution, recorderName, onReco
             Record Another
           </button>
           <button
-            onClick={() => {}}
+            onClick={() => { }}
             className="h-9 px-4 border border-[#E8E4DF] text-[#6B6560] rounded-lg text-[13px] font-semibold hover:bg-[#F8F6F3] transition"
           >
             Share Receipt

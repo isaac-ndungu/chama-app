@@ -43,8 +43,6 @@ export const useContributions = (chamaId, isOfficer = false) => {
   }, [loadAll]);
 
   const verify = async (contributionId) => {
-    // Re-throw the original axios error so the component can read
-    // err.response?.data?.error for the specific server message
     await verifyContribution(chamaId, contributionId);
     await loadAll();
   };
