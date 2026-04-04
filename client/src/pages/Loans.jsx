@@ -204,6 +204,7 @@ export default function Loans() {
     try {
       await recordRepayment(loanId, data);
       setRepayTarget(null);
+      toast.success('Payment Recorded')
     } catch {
     } finally {
       setRepayLoading(false);
