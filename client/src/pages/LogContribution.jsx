@@ -31,7 +31,7 @@ export default function LogContribution() {
   useEffect(() => {
     api.get(`/chamas/${chamaId}/members`)
       .then(res => setMembers(res.data.members))
-      .catch(() => {});
+      .catch(() => { });
   }, [chamaId]);
 
   const handleMpesaBlur = async () => {
@@ -59,7 +59,14 @@ export default function LogContribution() {
         mpesaRef: form.mpesaRef.toUpperCase().trim(),
         cycleId: dashboard?.cycle?._id,
       });
+      toast.success('Contribution recorded — awaiting verification by a second officer');
       setReceipt(result);
+      setForm({
+        memberId: '',
+        amount: '',
+        mpesaRef: '',
+        paymentDate: new Date().toISOString().split('T')[0]
+      })
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to record contribution');
     } finally {
@@ -152,11 +159,10 @@ export default function LogContribution() {
                 required
                 placeholder="QJK7X3AB1C"
                 maxLength={12}
-                className={`w-full h-10 px-3 border rounded-lg text-[13px] font-mono tracking-wide focus:outline-none focus:ring-2 ${
-                  mpesaError
+                className={`w-full h-10 px-3 border rounded-lg text-[13px] font-mono tracking-wide focus:outline-none focus:ring-2 ${mpesaError
                     ? 'border-[#C0392B] focus:border-[#C0392B] focus:ring-red-500/20'
                     : 'border-[#E8E4DF] focus:border-amber-500 focus:ring-amber-500/20'
-                }`}
+                  }`}
               />
               {mpesaError ? (
                 <p className="text-[11px] text-[#C0392B] mt-1 flex items-center gap-1">
