@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { MdMenu, MdMenuOpen } from 'react-icons/md';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 
@@ -9,17 +10,17 @@ const initials = (name) =>
 const timeAgo = (date) => {
   const diff = Date.now() - new Date(date).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1)  return 'just now';
+  if (mins < 1) return 'just now';
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24)  return `${hrs}h ago`;
+  if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
 };
 
 // Derive a human-readable notification from an audit log entry
 function auditToNotification(log) {
   const actor = log.actorId?.name || 'Someone';
-  const after  = log.after  || {};
+  const after = log.after || {};
 
   const map = {
     CONTRIBUTION_RECORDED: {
@@ -72,26 +73,23 @@ function auditToNotification(log) {
   return map[log.action] || null;
 }
 
-//  Notification Icon  
 function NotifIcon({ bg, color, icon }) {
   return (
-    <div className={`w-8 h-8 rounded-full ${bg} ${color} flex items-center justify-center text-sm flex-shrink-0`}>
+    <div className={`w-8 h-8 rounded-full ${bg} ${color} flex items-center justify-center text-sm shrink-0`}>
       {icon}
     </div>
   );
 }
 
-// ── Notifications Panel  
 function NotificationPanel({ chamaId, currentUserId, onClose, onMarkAllRead }) {
   const navigate = useNavigate();
-  const [items, setItems]     = useState([]);
-  const [read,  setRead]      = useState(() => {
+  const [items, setItems] = useState([]);
+  const [read, setRead] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem(`notif_read_${chamaId}`) || '[]')); }
     catch { return new Set(); }
   });
   const [loading, setLoading] = useState(true);
 
-  // Persist read set to localStorage
   const markRead = (ids) => {
     setRead(prev => {
       const next = new Set([...prev, ...ids]);
@@ -104,21 +102,18 @@ function NotificationPanel({ chamaId, currentUserId, onClose, onMarkAllRead }) {
     const load = async () => {
       setLoading(true);
       try {
-        // Pull from audit log — works with existing backend
         const res = await api.get(`/chamas/${chamaId}/audit?limit=20`);
         const logs = res.data.logs || [];
-
         const derived = logs
           .map(log => {
             const notif = auditToNotification(log);
             if (!notif) return null;
-            // Don't show the current user their own actions
             const actorId = log.actorId?._id || log.actorId;
+            // Skip entries the current user made themselves
             if (actorId?.toString() === currentUserId?.toString()) return null;
-            return { id: log._id, createdAt: log.createdAt, ...notif, route: log.action };
+            return { id: log._id, createdAt: log.createdAt, ...notif };
           })
           .filter(Boolean);
-
         setItems(derived);
       } catch {
         setItems([]);
@@ -133,7 +128,7 @@ function NotificationPanel({ chamaId, currentUserId, onClose, onMarkAllRead }) {
 
   const handleClick = (item) => {
     markRead([item.id]);
-    if (item.type?.startsWith('loan'))   navigate(`/chamas/${chamaId}/loans`);
+    if (item.type?.startsWith('loan')) navigate(`/chamas/${chamaId}/loans`);
     else if (item.type === 'contribution') navigate(`/chamas/${chamaId}/contributions`);
     else if (item.type === 'member_joined') navigate(`/chamas/${chamaId}/members`);
     onClose();
@@ -146,7 +141,6 @@ function NotificationPanel({ chamaId, currentUserId, onClose, onMarkAllRead }) {
 
   return (
     <div className="absolute top-[calc(100%+8px)] right-0 w-[340px] max-h-[480px] bg-white border border-[#E8E4DF] rounded-xl shadow-xl flex flex-col overflow-hidden z-[100]">
-      {/* Header */}
       <div className="flex justify-between items-center px-4 py-3 border-b border-[#E8E4DF]">
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-[#1C1814]">Notifications</span>
@@ -157,16 +151,12 @@ function NotificationPanel({ chamaId, currentUserId, onClose, onMarkAllRead }) {
           )}
         </div>
         {unread.length > 0 && (
-          <button
-            onClick={handleMarkAll}
-            className="text-[12px] text-amber-700 hover:text-amber-800 font-medium"
-          >
+          <button onClick={handleMarkAll} className="text-[12px] text-amber-700 hover:text-amber-800 font-medium">
             Mark all read
           </button>
         )}
       </div>
 
-      {/* List */}
       <div className="overflow-y-auto flex-1">
         {loading && (
           <div className="flex flex-col items-center justify-center py-10 gap-3">
@@ -189,9 +179,8 @@ function NotificationPanel({ chamaId, currentUserId, onClose, onMarkAllRead }) {
             <button
               key={item.id}
               onClick={() => handleClick(item)}
-              className={`w-full flex items-start gap-3 px-4 py-3 border-b border-[#F8F6F3] last:border-0 text-left transition-colors hover:bg-[#F8F6F3] ${
-                isUnread ? 'bg-amber-50/60' : 'bg-white'
-              }`}
+              className={`w-full flex items-start gap-3 px-4 py-3 border-b border-[#F8F6F3] last:border-0 text-left transition-colors hover:bg-[#F8F6F3] ${isUnread ? 'bg-amber-50/60' : 'bg-white'
+                }`}
             >
               <NotifIcon bg={item.bg} color={item.color} icon={item.icon} />
               <div className="flex-1 min-w-0">
@@ -209,16 +198,15 @@ function NotificationPanel({ chamaId, currentUserId, onClose, onMarkAllRead }) {
   );
 }
 
-// TopBar
-export default function TopBar({ chama, cycle, pendingCount }) {
-  const { user }    = useAuth();
+// ── TopBar ────────────────────────────────────────────────────────────────────
+export default function TopBar({ chama, cycle, pendingCount, collapsed, onToggleCollapse }) {
+  const { user } = useAuth();
   const { chamaId } = useParams();
   const [showNotifs, setShowNotifs] = useState(false);
-  const [unread,     setUnread]     = useState(0);
+  const [unread, setUnread] = useState(0);
   const panelRef = useRef(null);
-  const bellRef  = useRef(null);
+  const bellRef = useRef(null);
 
-  // Load unread count from localStorage on mount
   useEffect(() => {
     const load = async () => {
       try {
@@ -232,18 +220,17 @@ export default function TopBar({ chama, cycle, pendingCount }) {
           return isOther && hasNotif && !saved.has(log._id);
         }).length;
         setUnread(count);
-      } catch {}
+      } catch { }
     };
     if (chamaId && user?.id) load();
   }, [chamaId, user?.id]);
 
-  // Close on outside click
   useEffect(() => {
     if (!showNotifs) return;
     const handler = (e) => {
       if (
         panelRef.current && !panelRef.current.contains(e.target) &&
-        bellRef.current  && !bellRef.current.contains(e.target)
+        bellRef.current && !bellRef.current.contains(e.target)
       ) setShowNotifs(false);
     };
     document.addEventListener('mousedown', handler);
@@ -251,9 +238,21 @@ export default function TopBar({ chama, cycle, pendingCount }) {
   }, [showNotifs]);
 
   return (
-    <header className="h-14 bg-white border-b border-[#E8E4DF] flex items-center px-7 justify-between sticky top-0 z-40">
-      {/* Left */}
+    <header className="h-14 bg-white border-b border-[#E8E4DF] flex items-center px-4 justify-between sticky top-0 z-40">
+      {/* Left: collapse toggle + chama info */}
       <div className="flex items-center gap-3">
+        {/* Sidebar collapse toggle */}
+        <button
+          onClick={onToggleCollapse}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="p-1.5 rounded-lg text-[#9E9690] hover:text-[#1C1814] hover:bg-[#F8F6F3] transition"
+        >
+          {collapsed
+            ? <MdMenu className="w-5 h-5" />
+            : <MdMenuOpen className="w-5 h-5" />
+          }
+        </button>
+
         <span className="font-bold text-[15px] text-[#1C1814]">
           {chama?.name || 'Loading...'}
         </span>
@@ -269,23 +268,21 @@ export default function TopBar({ chama, cycle, pendingCount }) {
         )}
       </div>
 
-      {/* Right */}
+      {/* Right: bell + avatar */}
       <div className="flex items-center gap-4">
         <div className="relative">
           <button
             ref={bellRef}
             onClick={() => setShowNotifs(v => !v)}
-            className={`relative p-1.5 rounded-lg transition ${
-              showNotifs ? 'bg-amber-50 text-amber-700' : 'text-[#9E9690] hover:text-[#1C1814] hover:bg-[#F8F6F3]'
-            }`}
+            className={`relative p-1.5 rounded-lg transition ${showNotifs ? 'bg-amber-50 text-amber-700' : 'text-[#9E9690] hover:text-[#1C1814] hover:bg-[#F8F6F3]'
+              }`}
             title={unread > 0 ? `${unread} unread` : 'Notifications'}
           >
-            {/* Bell SVG — no external dependency */}
             <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
               <path d="M10 2a6 6 0 00-6 6v2.586l-1.707 1.707A1 1 0 003 14h14a1 1 0 00.707-1.707L16 10.586V8a6 6 0 00-6-6zM10 18a2 2 0 01-2-2h4a2 2 0 01-2 2z" />
             </svg>
             {unread > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 bg-amber-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center border-[1.5px] border-white px-0.5">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-amber-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center border-[1.5px] border-white px-0.5">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}
@@ -303,7 +300,6 @@ export default function TopBar({ chama, cycle, pendingCount }) {
           )}
         </div>
 
-        {/* Avatar */}
         <button className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-[11px] font-bold hover:opacity-90 transition">
           {initials(user?.name)}
         </button>
