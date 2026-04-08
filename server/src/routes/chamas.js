@@ -10,6 +10,7 @@ import auditRoutes from './audit.js';
 import dashboardRoutes from './dashboard.js';
 import { addClient, removeClient } from '../services/sseService.js';
 import reportRoutes from './reports.js';
+import { getCurrentCycle, createNextCycle, recordDisbursement, confirmReceipt, getCycleHistory } from '../controllers/cycleController.js';
 
 const router = Router();
 
@@ -63,8 +64,11 @@ router.get('/:chamaId/events', router.get('/:chamaId/events', async (req, res, n
 // All routes below require chama membership (chamaId in params)
 router.get('/:chamaId', requireChamaMember, getChamaById);
 router.put('/:chamaId', requireChamaMember, requireRole('chairperson'), updateChama);
-router.post('/:chamaId/cycle/close', requireChamaMember, requireRole('chairperson'), closeCycle);
-router.post('/:chamaId/cycle/start', requireChamaMember, requireRole('chairperson'), startCycle);
+router.get('/:chamaId/cycles', requireChamaMember, getCycleHistory);
+router.get('/:chamaId/cycles/current', requireChamaMember, getCurrentCycle);
+router.post('/:chamaId/cycles', requireChamaMember, requireRole('chairman', 'treasurer'), createNextCycle);
+router.patch('/:chamaId/cycles/:cycleId/disburse', requireChamaMember, requireRole('chairman', 'treasurer'), recordDisbursement);
+router.patch('/:chamaId/cycles/:cycleId/confirm-receipt', requireChamaMember, confirmReceipt);
 
 router.use('/:chamaId/members', requireChamaMember, memberRoutes);
 router.use('/:chamaId/contributions', requireChamaMember, contributionRoutes);
