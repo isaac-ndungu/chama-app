@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import chamaRoutes from './routes/chamas.js';
 import passport from 'passport';
 import { configurePassport } from './config/passport.js';
+import supportRoutes from './routes/support.js';
 
 
 const app = express();
@@ -59,6 +60,9 @@ app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/chamas', chamaRoutes);
+
+app.use('/api/support', supportRoutes);
+
 
 // 404 handler
 app.use((req, res) => {

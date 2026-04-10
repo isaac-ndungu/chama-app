@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import { useChama } from '../../hooks/useChama';
 import { useDashboard } from '../../hooks/useDashboard';
+import ChatWidget from '../ui/ChatWidget';
 
 export default function AppLayout({ children }) {
   const { chamaId }  = useParams();
@@ -32,6 +33,8 @@ export default function AppLayout({ children }) {
           {children}
         </main>
       </div>
+
+      <ChatWidget />
     </div>
   );
 }
