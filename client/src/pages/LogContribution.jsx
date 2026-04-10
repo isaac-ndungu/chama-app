@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import { useAuth } from '../context/AuthContext';
+import { useChama } from '../hooks/useChama';
 import { useContributions } from '../hooks/useContributions';
 import { useDashboard } from '../hooks/useDashboard';
 import ContributionReceipt from '../components/ui/ContributionReceipt';
@@ -14,7 +15,13 @@ export default function LogContribution() {
   const { chamaId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { record, contributions } = useContributions(chamaId);
+
+  // useChama gives us contributionAmount and role-based permission
+  const { chama, can } = useChama(chamaId);
+  const isOfficer = can('record_contribution');
+
+  // Pass isOfficer so the hook knows whether to fetch the pending queue
+  const { record, contributions } = useContributions(chamaId, isOfficer);
   const { data: dashboard, loading: dashLoading } = useDashboard(chamaId);
 
   const [members, setMembers] = useState([]);
@@ -34,9 +41,8 @@ export default function LogContribution() {
       .catch(() => { });
   }, [chamaId]);
 
-  const handleMpesaBlur = async () => {
+  const handleMpesaBlur = () => {
     if (!form.mpesaRef) return;
-    // Validate format
     if (!/^[A-Z0-9]{8,12}$/.test(form.mpesaRef.toUpperCase())) {
       setMpesaError('M-Pesa references are usually 10 characters, letters and numbers only');
     } else {
@@ -65,8 +71,8 @@ export default function LogContribution() {
         memberId: '',
         amount: '',
         mpesaRef: '',
-        paymentDate: new Date().toISOString().split('T')[0]
-      })
+        paymentDate: new Date().toISOString().split('T')[0],
+      });
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to record contribution');
     } finally {
@@ -76,8 +82,24 @@ export default function LogContribution() {
 
   const selectedMember = members.find(m => m.userId?._id === form.memberId);
   const totalMembers = members.length || 0;
-  // Count verified contributions for this cycle
+
+  const contribAmount = chama?.contributionAmount || 0;
+
+  // Verified contributions this cycle
   const paidThisCycle = contributions?.filter(c => c.status === 'verified').length || 0;
+  const totalCollected = paidThisCycle * contribAmount;
+  const totalExpected = totalMembers * contribAmount;
+  const progressPct = totalMembers > 0
+    ? Math.round((paidThisCycle / totalMembers) * 100)
+    : 0;
+
+  const cycleLabel = dashLoading
+    ? 'Loading...'
+    : dashboard?.cycle
+      ? `Cycle ${dashboard.cycle.cycleNumber} — ${new Date(dashboard.cycle.startDate).toLocaleDateString('en-KE')
+      } to ${new Date(dashboard.cycle.endDate).toLocaleDateString('en-KE')
+      }`
+      : 'No active cycle';
 
   return (
     <AppLayout>
@@ -85,7 +107,14 @@ export default function LogContribution() {
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="font-serif text-[26px] text-[#1C1814]">Record Contribution</h1>
-          <p className="text-sm text-[#9E9690] mt-0.5">Log a contribution for {dashLoading ? 'Cycle...' : dashboard?.cycle?.cycleNumber ? `Cycle ${dashboard.cycle.cycleNumber}` : 'active cycle'}</p>
+          <p className="text-sm text-[#9E9690] mt-0.5">
+            Log a contribution for{' '}
+            {dashLoading
+              ? 'Cycle...'
+              : dashboard?.cycle?.cycleNumber
+                ? `Cycle ${dashboard.cycle.cycleNumber}`
+                : 'active cycle'}
+          </p>
         </div>
         <button
           onClick={() => navigate(`/chamas/${chamaId}/contributions`)}
@@ -94,6 +123,13 @@ export default function LogContribution() {
           ← Back
         </button>
       </div>
+
+      {/* No active cycle warning */}
+      {!dashLoading && !dashboard?.cycle && (
+        <div className="bg-[#FFF0EF] border border-[rgba(192,57,43,0.2)] rounded-xl px-5 py-3.5 mb-5 text-[13px] text-[#C0392B]">
+          ⚠ There is no active cycle. Officers must start a cycle before contributions can be recorded.
+        </div>
+      )}
 
       <div className="grid grid-cols-[1fr_320px] gap-6 items-start">
         {/* Form */}
@@ -105,7 +141,9 @@ export default function LogContribution() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Member */}
             <div>
-              <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">Member *</label>
+              <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">
+                Member *
+              </label>
               <select
                 value={form.memberId}
                 onChange={e => setForm(f => ({ ...f, memberId: e.target.value }))}
@@ -115,7 +153,7 @@ export default function LogContribution() {
                 <option value="">Select member...</option>
                 {members.map(m => (
                   <option key={m.userId?._id} value={m.userId?._id}>
-                    {m.userId?.name} (Position {m.rotationPosition})
+                    {m.userId?.name} — Position {m.rotationPosition}
                   </option>
                 ))}
               </select>
@@ -124,7 +162,9 @@ export default function LogContribution() {
             {/* Amount + Date */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">Amount (KSh) *</label>
+                <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">
+                  Amount (KSh) *
+                </label>
                 <input
                   type="number"
                   value={form.amount}
@@ -132,13 +172,17 @@ export default function LogContribution() {
                   required
                   min="1"
                   step="1"
-                  placeholder="5000"
+                  placeholder={contribAmount || '5000'}
                   className="w-full h-10 px-3 border border-[#E8E4DF] rounded-lg text-[13px] focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                 />
-                <p className="text-[11px] text-[#9E9690] mt-1">Whole numbers only · No decimals</p>
+                <p className="text-[11px] text-[#9E9690] mt-1">
+                  Whole numbers only · Default: {fmt(contribAmount)}
+                </p>
               </div>
               <div>
-                <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">Payment Date *</label>
+                <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">
+                  Payment Date *
+                </label>
                 <input
                   type="date"
                   value={form.paymentDate}
@@ -151,7 +195,9 @@ export default function LogContribution() {
 
             {/* M-Pesa ref */}
             <div>
-              <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">M-Pesa Reference *</label>
+              <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">
+                M-Pesa Reference *
+              </label>
               <input
                 value={form.mpesaRef}
                 onChange={e => setForm(f => ({ ...f, mpesaRef: e.target.value.toUpperCase() }))}
@@ -166,10 +212,12 @@ export default function LogContribution() {
               />
               {mpesaError ? (
                 <p className="text-[11px] text-[#C0392B] mt-1 flex items-center gap-1">
-                  <span>⚠</span> {mpesaError}
+                  ⚠ {mpesaError}
                 </p>
               ) : (
-                <p className="text-[11px] text-[#9E9690] mt-1">Found in your M-Pesa SMS confirmation</p>
+                <p className="text-[11px] text-[#9E9690] mt-1">
+                  Found in your M-Pesa SMS confirmation
+                </p>
               )}
             </div>
 
@@ -178,7 +226,7 @@ export default function LogContribution() {
               <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">Cycle</label>
               <input
                 disabled
-                value={dashLoading ? 'Loading...' : dashboard?.cycle ? `Cycle ${dashboard.cycle.cycleNumber} — ${new Date(dashboard.cycle.startDate).toLocaleDateString('en-KE')} to ${new Date(dashboard.cycle.endDate).toLocaleDateString('en-KE')}` : 'No active cycle'}
+                value={cycleLabel}
                 className="w-full h-10 px-3 border border-[#E8E4DF] rounded-lg text-[13px] bg-[#F8F6F3] text-[#9E9690] cursor-not-allowed"
               />
             </div>
@@ -193,7 +241,7 @@ export default function LogContribution() {
             <div className="flex gap-3 pt-1">
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !dashboard?.cycle}
                 className="flex-1 h-11 bg-amber-600 text-white rounded-lg font-semibold text-[14px] hover:bg-amber-700 disabled:opacity-50 transition"
               >
                 {submitting ? 'Recording...' : 'Record Contribution'}
@@ -216,19 +264,39 @@ export default function LogContribution() {
             <div className="text-[10px] font-bold uppercase tracking-widest text-[#9E9690] mb-4">
               Summary Preview
             </div>
-            <div className="grid grid-cols-[100px_1fr] gap-y-2.5 text-[12px]">
+            <div className="grid grid-cols-[110px_1fr] gap-y-2.5 text-[12px]">
               <span className="text-[#9E9690]">Member</span>
-              <span className="font-semibold text-[#1C1814]">{selectedMember?.userId?.name || '—'}</span>
+              <span className="font-semibold text-[#1C1814]">
+                {selectedMember?.userId?.name || '—'}
+              </span>
+              <span className="text-[#9E9690]">Position</span>
+              <span className="text-[#1C1814]">
+                {selectedMember?.rotationPosition ? `#${selectedMember.rotationPosition}` : '—'}
+              </span>
               <span className="text-[#9E9690]">Amount</span>
-              <span className="font-serif text-[16px] text-[#1C1814]">{form.amount ? fmt(parseInt(form.amount, 10)) : '—'}</span>
+              <span className="font-serif text-[16px] text-[#1C1814]">
+                {form.amount ? fmt(parseInt(form.amount, 10)) : '—'}
+              </span>
               <span className="text-[#9E9690]">M-Pesa Ref</span>
-              <span className="font-mono text-[11px] text-[#1C1814]">{form.mpesaRef || '—'}</span>
+              <span className="font-mono text-[11px] text-[#1C1814]">
+                {form.mpesaRef || '—'}
+              </span>
               <span className="text-[#9E9690]">Date</span>
-              <span className="text-[#1C1814]">{form.paymentDate ? new Date(form.paymentDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
+              <span className="text-[#1C1814]">
+                {form.paymentDate
+                  ? new Date(form.paymentDate).toLocaleDateString('en-KE', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                  })
+                  : '—'}
+              </span>
               <span className="text-[#9E9690]">Cycle</span>
-              <span className="text-[#1C1814]">{paidThisCycle} of {totalMembers}</span>
+              <span className="text-[#1C1814]">
+                {dashboard?.cycle?.cycleNumber ? `Cycle ${dashboard.cycle.cycleNumber}` : '—'}
+              </span>
               <span className="text-[#9E9690]">Recorded by</span>
-              <span className="text-[#1C1814]">{user?.name?.split(' ')[0]} {user?.name?.split(' ')[1]?.[0]}.</span>
+              <span className="text-[#1C1814]">
+                {user?.name?.split(' ')[0]} {user?.name?.split(' ')[1]?.[0]}.
+              </span>
             </div>
           </div>
 
@@ -239,14 +307,19 @@ export default function LogContribution() {
             </div>
             <div className="mb-3">
               <div className="flex justify-between text-[12px] text-[#6B6560] mb-1.5">
-                <span>{fmt(paidThisCycle * 5000)} of {fmt(totalMembers * 5000)}</span>
-                <span className="font-bold text-[#1C1814]">{Math.round((paidThisCycle / totalMembers) * 100)}%</span>
+                <span>{fmt(totalCollected)} of {fmt(totalExpected)}</span>
+                <span className="font-bold text-[#1C1814]">{progressPct}%</span>
               </div>
               <div className="h-2 bg-[#F8F6F3] rounded-full border border-[#E8E4DF] overflow-hidden">
-                <div className="h-full bg-[#2A7A4B] rounded-full" style={{ width: `${Math.round((paidThisCycle / totalMembers) * 100)}%` }} />
+                <div
+                  className="h-full bg-[#2A7A4B] rounded-full transition-all"
+                  style={{ width: `${progressPct}%` }}
+                />
               </div>
             </div>
-            <div className="text-[12px] text-[#9E9690]">{paidThisCycle} of {totalMembers} members paid · {totalMembers - paidThisCycle} remaining</div>
+            <div className="text-[12px] text-[#9E9690]">
+              {paidThisCycle} of {totalMembers} members paid · {totalMembers - paidThisCycle} remaining
+            </div>
           </div>
         </div>
       </div>
@@ -258,7 +331,10 @@ export default function LogContribution() {
           recorderName={user?.name}
           onRecordAnother={() => {
             setReceipt(null);
-            setForm({ memberId: '', amount: '', mpesaRef: '', paymentDate: new Date().toISOString().split('T')[0] });
+            setForm({
+              memberId: '', amount: '', mpesaRef: '',
+              paymentDate: new Date().toISOString().split('T')[0],
+            });
           }}
           onViewAll={() => { setReceipt(null); navigate(`/chamas/${chamaId}/contributions`); }}
           onClose={() => setReceipt(null)}

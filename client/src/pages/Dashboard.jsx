@@ -4,42 +4,40 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import AppLayout from '../components/layout/AppLayout';
-
+import CycleBanner from '../components/ui/CycleBanner';
 import StatCard from '../components/dashboard/StatCard';
 import ContributionFeed from '../components/dashboard/ContributionFeed';
 import RotationQueue from '../components/dashboard/RotationQueue';
 import AuditFeed from '../components/dashboard/AuditFeed';
-import CycleBanner from '../components/ui/CycleBanner';
 import { useCycle } from '../hooks/useCycle';
 
 const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
 
+//  Role helpers 
+const isOfficerRole = (role) => role === 'chairperson' || role === 'treasurer';
+
 export default function Dashboard() {
   const { chamaId } = useParams();
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user }    = useAuth();
+  const navigate    = useNavigate();
 
-  const [dashboard, setDashboard] = useState(null);
+  const [dashboard,  setDashboard]  = useState(null);
   const [contributions, setContribs] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [auditLogs, setAuditLogs] = useState([]);
-  const [chama, setChama] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState('member');
+  const [members,    setMembers]    = useState([]);
+  const [auditLogs,  setAuditLogs]  = useState([]);
+  const [chama,      setChama]      = useState(null);
+  const [loading,    setLoading]    = useState(true);
+  const [role,       setRole]       = useState('member');
 
-  // ROSCA cycle state
   const {
-    cycle,
-    history,
-    disburse,
-    confirmReceipt,
-    createNext,
+    cycle, history,
+    disburse, confirmReceipt, createNext,
     reload: reloadCycle,
   } = useCycle(chamaId);
 
   const [disbursing, setDisbursing] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [starting, setStarting] = useState(false);
+  const [starting,   setStarting]   = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,20 +74,20 @@ export default function Dashboard() {
     const interval = setInterval(() => {
       api.get(`/chamas/${chamaId}/contributions`)
         .then(res => setContribs(res.data.contributions))
-        .catch(() => { });
+        .catch(() => {});
     }, 20000);
     return () => clearInterval(interval);
   }, [chamaId]);
 
-  const isOfficer = role === 'chairman' || role === 'treasurer';
+  const isOfficer   = isOfficerRole(role);
   const isRecipient = cycle?.potRecipientId?._id === user?.id ||
-    cycle?.potRecipientId === user?.id;
+                      cycle?.potRecipientId        === user?.id;
 
   const handleDisburse = async (cycleId, ref, amount) => {
     setDisbursing(true);
     try {
       await disburse(cycleId, ref, amount);
-      load(); // refresh dashboard stats
+      load();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to record disbursement');
     } finally {
@@ -121,8 +119,13 @@ export default function Dashboard() {
     }
   };
 
-  const dashCycle = dashboard?.cycle;
+  const dashCycle    = dashboard?.cycle;
   const pendingCount = dashboard?.pendingVerifications || 0;
+
+  // Find current user's rotation position for the member stats card
+  const myMembership = members.find(
+    m => (m.userId?._id || m.userId) === user?.id
+  );
 
   return (
     <AppLayout>
@@ -134,11 +137,15 @@ export default function Dashboard() {
             <p className="text-sm text-[#9E9690] mt-0.5">
               Cycle {cycle.cycleNumber} —{' '}
               {cycle.startDate
-                ? new Date(cycle.startDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })
+                ? new Date(cycle.startDate).toLocaleDateString('en-KE', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                  })
                 : '—'}{' '}
               to{' '}
               {cycle.endDate
-                ? new Date(cycle.endDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })
+                ? new Date(cycle.endDate).toLocaleDateString('en-KE', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                  })
                 : '—'}
             </p>
           )}
@@ -153,7 +160,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── ROSCA Cycle Banner ── */}
+      {/*  ROSCA Cycle Banner  */}
       <CycleBanner
         cycle={cycle}
         history={history}
@@ -169,7 +176,7 @@ export default function Dashboard() {
         starting={starting}
       />
 
-      {/* ── Stat cards ── */}
+      {/*  Stat cards  */}
       <div className="grid grid-cols-4 gap-3 mb-6">
         {isOfficer ? (
           <>
@@ -191,14 +198,20 @@ export default function Dashboard() {
             <StatCard
               label="Active Loans"
               value={loading ? '...' : dashboard?.activeLoansCount || 0}
-              sub={dashboard?.totalOutstandingLoans ? `${fmt(dashboard.totalOutstandingLoans)} outstanding` : 'No outstanding loans'}
-              trend={dashboard?.overdueLoans > 0 ? `${dashboard.overdueLoans} overdue` : undefined}
+              sub={dashboard?.totalOutstandingLoans
+                ? `${fmt(dashboard.totalOutstandingLoans)} outstanding`
+                : 'No outstanding loans'}
+              trend={dashboard?.overdueLoans > 0
+                ? `${dashboard.overdueLoans} overdue`
+                : undefined}
               trendType="down"
             />
             <StatCard
               label="In Arrears"
               value={loading ? '...' : dashboard?.membersInArrears || 0}
-              sub={dashboard?.membersInArrears > 0 ? 'Members behind on payments' : 'All members up to date'}
+              sub={dashboard?.membersInArrears > 0
+                ? 'Members behind on payments'
+                : 'All members up to date'}
               valueColor={dashboard?.membersInArrears > 0 ? 'text-[#C0392B]' : undefined}
               trend={dashboard?.membersInArrears > 0 ? '↑ Action needed' : undefined}
               trendType="bad"
@@ -225,11 +238,14 @@ export default function Dashboard() {
             />
             <StatCard
               label="My Pot Status"
-              value={loading ? '...' : dashboard?.myLedger?.potReceived > 0 ? '✓ Received' : 'Not yet'}
+              value={loading ? '...' : dashboard?.myLedger?.potReceived > 0
+                ? '✓ Received'
+                : 'Not yet'}
               sub={dashboard?.myLedger?.potReceived > 0
                 ? fmt(dashboard.myLedger.potReceived)
-                : `Position ${members.find(m => m.userId?._id === user?.id || m.userId === user?.id)?.rotationPosition || '—'} in queue`
-              }
+                : myMembership?.rotationPosition
+                  ? `Position ${myMembership.rotationPosition} in queue`
+                  : 'In queue'}
               valueColor={dashboard?.myLedger?.potReceived > 0 ? 'text-[#2A7A4B]' : undefined}
             />
           </>
@@ -239,7 +255,6 @@ export default function Dashboard() {
       {/* ── Main content grid ── */}
       <div className="grid grid-cols-[1fr_320px] gap-5">
         <ContributionFeed contributions={contributions} loading={loading} />
-
         <div className="flex flex-col gap-4">
           <RotationQueue
             members={members}

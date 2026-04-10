@@ -66,8 +66,8 @@ router.get('/:chamaId', requireChamaMember, getChamaById);
 router.put('/:chamaId', requireChamaMember, requireRole('chairperson'), updateChama);
 router.get('/:chamaId/cycles', requireChamaMember, getCycleHistory);
 router.get('/:chamaId/cycles/current', requireChamaMember, getCurrentCycle);
-router.post('/:chamaId/cycles', requireChamaMember, requireRole('chairman', 'treasurer'), createNextCycle);
-router.patch('/:chamaId/cycles/:cycleId/disburse', requireChamaMember, requireRole('chairman', 'treasurer'), recordDisbursement);
+router.post('/:chamaId/cycles', requireChamaMember, requireRole('chairperson', 'treasurer'), createNextCycle);
+router.patch('/:chamaId/cycles/:cycleId/disburse', requireChamaMember, requireRole('chairperson', 'treasurer'), recordDisbursement);
 router.patch('/:chamaId/cycles/:cycleId/confirm-receipt', requireChamaMember, confirmReceipt);
 
 router.use('/:chamaId/members', requireChamaMember, memberRoutes);

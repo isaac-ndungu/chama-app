@@ -2,7 +2,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import MemberAvatar from './MemberAvatar';
 import StatusBadge from './StatusBadge';
 
-const fmt = (n) => `KSh ${Number(n).toLocaleString('en-KE')}`;
+// Guard against null/undefined/0
+const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
 
 export default function ContributionFeed({ contributions = [], loading }) {
     const { chamaId } = useParams();
@@ -12,7 +13,7 @@ export default function ContributionFeed({ contributions = [], loading }) {
         return (
             <div className="bg-white border border-[#E8E4DF] rounded-2xl overflow-hidden">
                 <div className="px-5 py-4 border-b border-[#E8E4DF]">
-                    <span className="font-bold text-sm text-[#1C1814]">Recents Contributions</span>
+                    <span className="font-bold text-sm text-[#1C1814]">Recent Contributions</span>
                 </div>
                 {[1, 2, 3].map(i => (
                     <div key={i} className="px-5 py-4 border-b border-[#E8E4DF] last:border-0 animate-pulse">
@@ -42,7 +43,7 @@ export default function ContributionFeed({ contributions = [], loading }) {
                 </button>
             </div>
 
-            {/* Table header */}
+            {/* Column headers */}
             <div className="grid grid-cols-[1fr_100px_120px_90px_100px_80px] px-4 pb-2 pt-3">
                 {['Member', 'Amount', 'M-Pesa Ref', 'Date', 'Status', ''].map(h => (
                     <div key={h} className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9E9690]">
@@ -60,6 +61,8 @@ export default function ContributionFeed({ contributions = [], loading }) {
                 contributions.slice(0, 6).map(c => {
                     const name = c.memberId?.name || 'Unknown';
                     const isPending = c.status === 'pending_verification';
+                    const amount = c.amount ?? 0;
+
                     return (
                         <div
                             key={c._id}
@@ -77,15 +80,19 @@ export default function ContributionFeed({ contributions = [], loading }) {
                             </div>
 
                             {/* Amount */}
-                            <div className="font-bold text-[13px] font-serif">{fmt(c.amount)}</div>
+                            <div className="font-bold text-[13px] font-serif">{fmt(amount)}</div>
 
                             {/* M-Pesa ref */}
-                            <div className="font-mono text-[11px] text-[#9E9690]">{c.mpesaRef}</div>
+                            <div className="font-mono text-[11px] text-[#9E9690] truncate">
+                                {c.mpesaRef || <span className="not-italic text-[#C8C4BE]">—</span>}
+                            </div>
 
                             {/* Date */}
                             <div className="text-[12px] text-[#6B6560]">
                                 {c.paymentDate
-                                    ? new Date(c.paymentDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })
+                                    ? new Date(c.paymentDate).toLocaleDateString('en-KE', {
+                                        day: 'numeric', month: 'short', year: 'numeric',
+                                    })
                                     : '—'}
                             </div>
 

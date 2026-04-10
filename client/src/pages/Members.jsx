@@ -12,33 +12,37 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
-const fmt    = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
-const fmtDay = (d) => d ? new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
+const fmtDay = (d) => d
+  ? new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })
+  : '—';
+
+
+const isOfficerRole = (role) => role === 'chairperson' || role === 'treasurer';
 
 export default function Members() {
   const { chamaId } = useParams();
-  const navigate    = useNavigate();
-  const { user }    = useAuth();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { chama, can, memberCount } = useChama(chamaId);
   const {
     cycle, history,
     disburse, confirmReceipt, createNext,
   } = useCycle(chamaId);
 
-  const [members,   setMembers]   = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [search,    setSearch]    = useState('');
-  const [showAll,   setShowAll]   = useState(false);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [showAll, setShowAll] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole,  setInviteRole]  = useState('member');
-  const [inviting,  setInviting]  = useState(false);
-  const [role, setRole]           = useState('member');
+  const [inviteRole, setInviteRole] = useState('member');
+  const [inviting, setInviting] = useState(false);
+  const [role, setRole] = useState('member');
 
-  // Cycle action states
   const [disbursing, setDisbursing] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [starting,   setStarting]   = useState(false);
+  const [starting, setStarting] = useState(false);
 
   useEffect(() => {
     api.get(`/chamas/${chamaId}/members`)
@@ -48,12 +52,12 @@ export default function Members() {
 
     api.get(`/chamas/${chamaId}`)
       .then(res => setRole(res.data.myRole))
-      .catch(() => {});
+      .catch(() => { });
   }, [chamaId]);
 
-  const isOfficer   = role === 'chairman' || role === 'treasurer';
+  const isOfficer = isOfficerRole(role);
   const isRecipient = cycle?.potRecipientId?._id === user?.id ||
-                      cycle?.potRecipientId === user?.id;
+    cycle?.potRecipientId === user?.id;
 
   const filtered = members.filter(m =>
     !search || m.userId?.name?.toLowerCase().includes(search.toLowerCase())
@@ -98,7 +102,6 @@ export default function Members() {
     finally { setStarting(false); }
   };
 
-  // Build position → history map
   const positionToHistory = {};
   history.forEach(c => {
     if (c.status === 'closed' && c.potRecipientPosition) {
@@ -126,7 +129,7 @@ export default function Members() {
         )}
       </div>
 
-      {/* Cycle banner — visible on members page too */}
+      {/* Cycle banner */}
       <CycleBanner
         cycle={cycle}
         history={history}
@@ -144,7 +147,7 @@ export default function Members() {
 
       <div className="grid grid-cols-[1fr_300px] gap-5">
 
-        {/* ── Member Table ─────────────────────────────────────────────────── */}
+        {/*  Member Table  */}
         <div className="bg-white border border-[#E8E4DF] rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E4DF]">
             <span className="font-bold text-[14px] text-[#1C1814]">Member Directory</span>
@@ -152,20 +155,20 @@ export default function Members() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search..."
-              className="h-8 px-3 border border-[#E8E4DF] rounded-lg text-[12px] bg-[#F8F6F3] focus:outline-none focus:border-amber-500 w-[180px]"
+              className="h-8 px-3 border border-[#E8E4DF] rounded-lg text-[12px] bg-[#F8F6F3] focus:outline-none focus:border-amber-500 w-45"
             />
           </div>
 
-          {/* Column headers */}
           <div className="grid grid-cols-[44px_1fr_120px_120px_140px_90px] px-5 py-2.5 border-b border-[#E8E4DF]">
             {['#', 'Member', 'Role', 'Cycle Status', 'Pot Status', ''].map(h => (
-              <div key={h} className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9E9690]">{h}</div>
+              <div key={h} className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9E9690]">
+                {h}
+              </div>
             ))}
           </div>
 
-          {/* Rows */}
           {loading ? (
-            [1,2,3,4].map(i => (
+            [1, 2, 3, 4].map(i => (
               <div key={i} className="grid grid-cols-[44px_1fr_120px_120px_140px_90px] px-5 py-4 border-b border-[#E8E4DF] animate-pulse">
                 <div className="h-3 bg-[#E8E4DF] rounded" />
                 <div className="flex items-center gap-3">
@@ -175,15 +178,16 @@ export default function Members() {
                     <div className="h-2.5 bg-[#E8E4DF] rounded w-20" />
                   </div>
                 </div>
-                {[1,2,3,4].map(j => <div key={j} className="h-3 bg-[#E8E4DF] rounded self-center" />)}
+                {[1, 2, 3, 4].map(j => <div key={j} className="h-3 bg-[#E8E4DF] rounded self-center" />)}
               </div>
             ))
           ) : (
             displayed.map(m => {
-              const pos      = m.rotationPosition;
-              const hist     = positionToHistory[pos];
+              const pos = m.rotationPosition;
+              const hist = positionToHistory[pos];
               const received = !!hist;
-              const isCurrent = pos === cycle?.potRecipientPosition && (cycle?.status === 'active' || cycle?.status === 'collection' || cycle?.status === 'disbursed');
+              const isCurrent = pos === cycle?.potRecipientPosition &&
+                ['active', 'collection', 'disbursed'].includes(cycle?.status);
 
               return (
                 <div
@@ -191,10 +195,9 @@ export default function Members() {
                   className="grid grid-cols-[44px_1fr_120px_120px_140px_90px] px-5 py-4 border-b border-[#E8E4DF] last:border-0 hover:bg-[#F8F6F3] transition items-center cursor-pointer"
                   onClick={() => navigate(`/chamas/${chamaId}/members/${m.userId?._id}`)}
                 >
-                  {/* Position */}
-                  <div className={`font-serif text-[20px] leading-none ${
-                    isCurrent ? 'text-amber-500' : 'text-[#E8E4DF]'
-                  }`}>
+                  {/* Position — highlighted if this is the current cycle recipient */}
+                  <div className={`font-serif text-[20px] leading-none ${isCurrent ? 'text-amber-500' : 'text-[#E8E4DF]'
+                    }`}>
                     {pos}
                   </div>
 
@@ -204,7 +207,9 @@ export default function Members() {
                     <div>
                       <div className="font-semibold text-[13px] text-[#1C1814]">{m.userId?.name}</div>
                       <div className="text-[11px] text-[#9E9690]">
-                        Joined {m.joinedAt ? new Date(m.joinedAt).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' }) : '—'}
+                        Joined {m.joinedAt
+                          ? new Date(m.joinedAt).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' })
+                          : '—'}
                       </div>
                     </div>
                   </div>
@@ -239,7 +244,7 @@ export default function Members() {
                     )}
                   </div>
 
-                  {/* Profile */}
+                  {/* Profile button */}
                   <div onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => navigate(`/chamas/${chamaId}/members/${m.userId?._id}`)}
@@ -266,7 +271,7 @@ export default function Members() {
           )}
         </div>
 
-        {/* ── Full Rotation Queue ───────────────────────────────────────────── */}
+        {/*  Rotation Queue + Payout History  */}
         <div className="space-y-4">
           <RotationQueue
             members={members}
@@ -277,8 +282,7 @@ export default function Members() {
             compact={false}
           />
 
-          {/* Rotation summary */}
-          {history.length > 0 && (
+          {history.filter(c => c.status === 'closed').length > 0 && (
             <div className="bg-white border border-[#E8E4DF] rounded-2xl p-5">
               <div className="text-[10px] font-bold uppercase tracking-widest text-[#9E9690] mb-3">
                 Payout History
@@ -298,7 +302,8 @@ export default function Members() {
                         </span>
                         <MemberAvatar name={c.potRecipientId?.name} size="sm" />
                         <span className="text-[12px] font-medium text-[#1C1814]">
-                          {c.potRecipientId?.name?.split(' ')[0]} {c.potRecipientId?.name?.split(' ')[1]?.[0]}.
+                          {c.potRecipientId?.name?.split(' ')[0]}{' '}
+                          {c.potRecipientId?.name?.split(' ')[1]?.[0]}.
                         </span>
                       </div>
                       <div className="text-right">
@@ -319,13 +324,21 @@ export default function Members() {
 
       {/* Invite modal */}
       {showInvite && (
-        <div className="fixed inset-0 bg-[#1C1814]/50 z-50 flex items-center justify-center p-4" onClick={() => setShowInvite(false)}>
-          <div className="bg-white rounded-2xl p-7 w-full max-w-[420px] shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-[#1C1814]/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowInvite(false)}
+        >
+          <div
+            className="bg-white rounded-2xl p-7 w-full max-w-105 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
             <h2 className="font-bold text-[17px] text-[#1C1814] mb-1">Invite New Member</h2>
             <p className="text-[13px] text-[#9E9690] mb-5">They must have a ChamaLedger account first</p>
             <form onSubmit={handleInvite} className="space-y-4">
               <div>
-                <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">Email Address</label>
+                <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   value={inviteEmail}
@@ -344,6 +357,7 @@ export default function Members() {
                 >
                   <option value="member">Member</option>
                   <option value="treasurer">Treasurer</option>
+                  <option value="chairperson">Chairperson</option>
                 </select>
               </div>
               <div className="flex gap-3 pt-1">

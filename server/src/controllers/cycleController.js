@@ -7,8 +7,7 @@ import AppError from '../utils/AppError.js';
 import catchAsync from '../utils/catchAsync.js';
 import { createAuditLog } from '../services/auditService.js';
 
-//  GET current active cycle 
-export const getCurrentCycle = catchAsync(async (req, res, next) => {
+export const getCurrentCycle = catchAsync(async (req, res) => {
     const { chamaId } = req.params;
     const cycle = await Cycle.findOne({
         chamaId,
@@ -18,7 +17,6 @@ export const getCurrentCycle = catchAsync(async (req, res, next) => {
     res.json({ cycle: cycle || null });
 });
 
-//  creare first or next cycle 
 export const createNextCycle = catchAsync(async (req, res, next) => {
     const { chamaId } = req.params;
     const { startDate, endDate } = req.body;
@@ -26,46 +24,42 @@ export const createNextCycle = catchAsync(async (req, res, next) => {
     const chama = await Chama.findById(chamaId);
     if (!chama) return next(new AppError('Chama not found', 404));
 
-    // Find the last closed cycle to determine next position
-    const lastCycle = await Cycle.findOne({ chamaId, status: 'closed' })
-        .sort({ cycleNumber: -1 });
-
-    const nextCycleNumber = lastCycle ? lastCycle.cycleNumber + 1 : 1;
-    const nextPosition = lastCycle ? lastCycle.potRecipientPosition + 1 : 1;
-
-    // Check no active cycle already exists
+    // Prevent creating a cycle when one is already active
     const activeCycle = await Cycle.findOne({
         chamaId,
         status: { $in: ['active', 'collection', 'disbursed'] },
     });
     if (activeCycle) {
-        return next(new AppError('A cycle is already active. Close it before starting a new one.', 409));
+        return next(new AppError(
+            'A cycle is already active. The current cycle must be closed before starting a new one.', 409
+        ));
     }
 
-    // Find the member at nextPosition in the rotation
-    const membership = await Membership.findOne({
-        chamaId,
-        rotationPosition: nextPosition,
-        status: 'active',
-    }).populate('userId', 'name');
+    // Determine next cycle number and rotation position
+    const lastClosed = await Cycle.findOne({ chamaId, status: 'closed' })
+        .sort({ cycleNumber: -1 });
 
-    if (!membership) {
-        // All positions have received,  rotation complete, start over
-        const firstMembership = await Membership.findOne({
-            chamaId,
-            rotationPosition: 1,
-            status: 'active',
-        }).populate('userId', 'name');
-        if (!firstMembership) return next(new AppError('No members found in rotation', 404));
+    const nextCycleNumber = lastClosed ? lastClosed.cycleNumber + 1 : 1;
+    const nextPosition = lastClosed ? lastClosed.potRecipientPosition + 1 : 1;
+
+    // Find the active member at nextPosition
+    const activeMemberships = await Membership.find({ chamaId, status: 'active' })
+        .populate('userId', 'name')
+        .sort({ rotationPosition: 1 });
+
+    if (activeMemberships.length === 0) {
+        return next(new AppError('No active members found', 404));
     }
 
-    const recipientMembership = membership || await Membership.findOne({
-        chamaId,
-        rotationPosition: 1,
-        status: 'active',
-    }).populate('userId', 'name');
+    // Wrap around if all positions have received (restart rotation)
+    const maxPosition = Math.max(...activeMemberships.map(m => m.rotationPosition));
+    const effectivePos = nextPosition > maxPosition ? 1 : nextPosition;
 
-    const activeMemberCount = await Membership.countDocuments({ chamaId, status: 'active' });
+    const recipientMembership = activeMemberships.find(
+        m => m.rotationPosition === effectivePos
+    ) || activeMemberships[0];
+
+    const expectedAmount = activeMemberships.length * chama.contributionAmount;
 
     const cycle = await Cycle.create({
         chamaId,
@@ -74,7 +68,7 @@ export const createNextCycle = catchAsync(async (req, res, next) => {
         potRecipientPosition: recipientMembership.rotationPosition,
         startDate: startDate ? new Date(startDate) : new Date(),
         endDate: endDate ? new Date(endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        expectedAmount: activeMemberCount * chama.contributionAmount,
+        expectedAmount,
         actualAmount: 0,
         status: 'active',
     });
@@ -90,11 +84,12 @@ export const createNextCycle = catchAsync(async (req, res, next) => {
         ipAddress: req.ip,
     });
 
-    const populated = await Cycle.findById(cycle._id).populate('potRecipientId', 'name email phone');
+    const populated = await Cycle.findById(cycle._id)
+        .populate('potRecipientId', 'name email phone');
+
     res.status(201).json({ cycle: populated });
 });
 
-//  record pot disbursement (officers)
 export const recordDisbursement = catchAsync(async (req, res, next) => {
     const { chamaId, cycleId } = req.params;
     const { disbursementRef, disbursedAmount } = req.body;
@@ -106,30 +101,36 @@ export const recordDisbursement = catchAsync(async (req, res, next) => {
     const cycle = await Cycle.findOne({ _id: cycleId, chamaId });
     if (!cycle) return next(new AppError('Cycle not found', 404));
 
-    if (cycle.status !== 'active' && cycle.status !== 'collection') {
-        return next(new AppError(`Cannot disburse a cycle with status: ${cycle.status}`, 400));
+    if (!['active', 'collection'].includes(cycle.status)) {
+        return next(new AppError(`Cannot disburse — cycle status is: ${cycle.status}`, 400));
     }
 
-    // Calculate actual amount from verified contributions
-    const contribAgg = await Contribution.aggregate([
-        { $match: { chamaId: cycle.chamaId, cycleId: cycle._id, status: 'verified' } },
-        { $group: { _id: null, total: { $sum: '$amount' } } },
-    ]);
-    const actualCollected = contribAgg[0]?.total || 0;
+    // Use provided amount or re-aggregate from verified contributions
+    let finalAmount = disbursedAmount;
+    if (!finalAmount) {
+        const agg = await Contribution.aggregate([
+            { $match: { chamaId: cycle.chamaId, cycleId: cycle._id, status: 'verified' } },
+            { $group: { _id: null, total: { $sum: '$amount' } } },
+        ]);
+        finalAmount = agg[0]?.total || 0;
+    }
 
     const before = cycle.toObject();
     cycle.status = 'disbursed';
     cycle.disbursementRef = disbursementRef.trim().toUpperCase();
     cycle.disbursedAt = new Date();
-    cycle.actualAmount = disbursedAmount || actualCollected;
+    cycle.disbursedAmount = finalAmount;
+    
     await cycle.save();
 
-    // Update recipient's MemberLedger potReceived field
-    await MemberLedger.findOneAndUpdate(
-        { chamaId, memberId: cycle.potRecipientId },
-        { $inc: { potReceived: cycle.actualAmount } },
-        { upsert: true }
-    );
+    // Update recipient's MemberLedger potReceived
+    if (cycle.potRecipientId) {
+        await MemberLedger.findOneAndUpdate(
+            { chamaId, memberId: cycle.potRecipientId },
+            { $inc: { potReceived: finalAmount } },
+            { upsert: true }
+        );
+    }
 
     await createAuditLog({
         chamaId,
@@ -142,11 +143,11 @@ export const recordDisbursement = catchAsync(async (req, res, next) => {
         ipAddress: req.ip,
     });
 
-    const populated = await Cycle.findById(cycle._id).populate('potRecipientId', 'name email phone');
+    const populated = await Cycle.findById(cycle._id)
+        .populate('potRecipientId', 'name email phone');
+
     res.json({ cycle: populated });
 });
-
-// Pot recipient confirmation
 
 export const confirmReceipt = catchAsync(async (req, res, next) => {
     const { chamaId, cycleId } = req.params;
@@ -155,10 +156,12 @@ export const confirmReceipt = catchAsync(async (req, res, next) => {
     if (!cycle) return next(new AppError('Cycle not found', 404));
 
     if (cycle.status !== 'disbursed') {
-        return next(new AppError('Pot has not been disbursed yet — officers must record disbursement first', 400));
+        return next(new AppError(
+            'Pot has not been disbursed yet — officers must record disbursement first', 400
+        ));
     }
 
-    // Only the recipient can confirm
+    // only the pot recipient can confirm
     if (cycle.potRecipientId.toString() !== req.user._id.toString()) {
         return next(new AppError('Only the pot recipient can confirm receipt', 403));
     }
@@ -181,11 +184,10 @@ export const confirmReceipt = catchAsync(async (req, res, next) => {
 
     res.json({
         cycle: await Cycle.findById(cycle._id).populate('potRecipientId', 'name email phone'),
-        message: 'Receipt confirmed. Cycle is now closed.',
+        message: 'Receipt confirmed. This cycle is now closed.',
     });
 });
 
-// rotation history
 export const getCycleHistory = catchAsync(async (req, res) => {
     const { chamaId } = req.params;
     const cycles = await Cycle.find({ chamaId })

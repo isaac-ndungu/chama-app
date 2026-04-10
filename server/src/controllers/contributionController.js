@@ -1,4 +1,5 @@
 import Contribution from '../models/Contribution.js';
+import Cycle from '../models/Cycle.js';
 import AppError from '../utils/AppError.js';
 import catchAsync from '../utils/catchAsync.js';
 import { createAuditLog } from '../services/auditService.js';
@@ -43,7 +44,9 @@ export const verifyContribution = catchAsync(async (req, res, next) => {
     const { chamaId, contributionId } = req.params;
     const verifierId = req.user._id;
 
-    const contribution = await Contribution.findOne({ _id: contributionId, chamaId });
+    const contribution = await Contribution.findOne({ _id: contributionId, chamaId })
+        .populate('cycleId', 'cycleNumber');   // ← populate so audit detail has cycleNumber
+
     if (!contribution) return next(new AppError('Contribution not found', 404));
     if (contribution.status !== 'pending_verification') {
         return next(new AppError('Only pending contributions can be verified', 400));
@@ -58,14 +61,38 @@ export const verifyContribution = catchAsync(async (req, res, next) => {
     contribution.status = 'verified';
     await contribution.save();
 
+    // ── CRITICAL: update cycle.actualAmount so CycleBanner progress fills correctly ──
+    // Re-aggregate ALL verified contributions for this cycle (not just +amount, in case
+    // of disputes/reversals) and write the authoritative total back to the cycle.
+    if (contribution.cycleId) {
+        const cycleId = contribution.cycleId._id || contribution.cycleId;
+
+        const agg = await Contribution.aggregate([
+            {
+                $match: {
+                    chamaId: contribution.chamaId,
+                    cycleId,
+                    status: 'verified',
+                },
+            },
+            {
+                $group: { _id: null, total: { $sum: '$amount' } },
+            },
+        ]);
+
+        const newTotal = agg[0]?.total || 0;
+
+        await Cycle.findByIdAndUpdate(cycleId, { actualAmount: newTotal });
+    }
+
     broadcastToChama(chamaId, 'contribution_verified', {
         contributionId: contribution._id,
         memberName: req.user.name,
         amount: contribution.amount,
-        verifiedAt: contribution.verifiedAt
+        verifiedAt: contribution.verifiedAt,
     });
 
-    // Update ledger synchronously — ledger must stay in sync with verified contributions
+    // Recalculate member ledger synchronously
     await recalculateMemberLedger(chamaId, contribution.memberId);
 
     await createAuditLog({
@@ -76,7 +103,7 @@ export const verifyContribution = catchAsync(async (req, res, next) => {
         targetId: contribution._id,
         before,
         after: contribution.toObject(),
-        ipAddress: req.ip
+        ipAddress: req.ip,
     });
 
     res.json({ contribution });
@@ -95,10 +122,29 @@ export const disputeContribution = catchAsync(async (req, res, next) => {
     contribution.disputeNote = note.trim();
     await contribution.save();
 
+    // ── If disputed contribution was previously verified, subtract from cycle total ──
+    if (before.status === 'verified' && contribution.cycleId) {
+        const agg = await Contribution.aggregate([
+            {
+                $match: {
+                    chamaId: contribution.chamaId,
+                    cycleId: contribution.cycleId,
+                    status: 'verified',
+                },
+            },
+            {
+                $group: { _id: null, total: { $sum: '$amount' } },
+            },
+        ]);
+        await Cycle.findByIdAndUpdate(contribution.cycleId, {
+            actualAmount: agg[0]?.total || 0,
+        });
+    }
+
     await createAuditLog({
         chamaId, actorId: req.user._id, action: 'CONTRIBUTION_DISPUTED',
         targetCollection: 'contributions', targetId: contribution._id,
-        before, after: contribution.toObject(), ipAddress: req.ip
+        before, after: contribution.toObject(), ipAddress: req.ip,
     });
 
     res.json({ contribution });
@@ -110,21 +156,21 @@ export const listContributions = catchAsync(async (req, res) => {
 
     const query = { chamaId };
     if (cycleId) query.cycleId = cycleId;
-    if (status) query.status = status;
+    if (memberId) query.memberId = memberId;
 
-
-    if (memberId) {
-        query.memberId = memberId;
-    }
-    // Members can only see verified  contributions 
+    // Members see all verified contributions (transparency) — officers see everything
     if (req.membership.role === 'member') {
         query.status = 'verified';
+    } else if (status) {
+        // Officers can filter by any status
+        query.status = status;
     }
 
     const contributions = await Contribution.find(query)
-        .populate('memberId', 'name')
+        .populate('memberId', 'name rotationPosition')
         .populate('recordedBy', 'name')
         .populate('verifiedBy', 'name')
+        .populate('cycleId', 'cycleNumber')
         .sort({ createdAt: -1 });
 
     res.json({ contributions });
@@ -133,11 +179,11 @@ export const listContributions = catchAsync(async (req, res) => {
 export const getPendingVerifications = catchAsync(async (req, res) => {
     const contributions = await Contribution.find({
         chamaId: req.params.chamaId,
-        status: 'pending_verification'
+        status: 'pending_verification',
     })
-        .populate('memberId', 'name')
+        .populate('memberId', 'name rotationPosition')
         .populate('recordedBy', 'name')
-        .sort({ createdAt: 1 });   // oldest first — process in order
+        .sort({ createdAt: 1 });  // oldest first
 
     res.json({ contributions, count: contributions.length });
 });
