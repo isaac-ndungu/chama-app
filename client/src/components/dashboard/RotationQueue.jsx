@@ -1,8 +1,16 @@
 import MemberAvatar from './MemberAvatar';
 
-const fmt = (n) => `KSh ${Number(n).toLocaleString('en-KE')}`;
+const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
+const fmtDay = (d) => d ? new Date(d).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' }) : '—';
 
-export default function RotationQueue({ members = [], currentPosition = 1, contributionAmount = 0, loading }) {
+export default function RotationQueue({
+    members = [],
+    history = [],           // array of closed cycles
+    cycle,                  // current active/disbursed cycle
+    contributionAmount = 0,
+    loading,
+    compact = true,         // true = dashboard widget, false = full page view
+}) {
     if (loading) {
         return (
             <div className="bg-white border border-[#E8E4DF] rounded-2xl p-5">
@@ -10,44 +18,65 @@ export default function RotationQueue({ members = [], currentPosition = 1, contr
                     Rotation Queue
                 </div>
                 <div className="space-y-2">
-                    {[1, 2, 3].map(i => (
-                        <div key={i} className="h-8 bg-[#E8E4DF] rounded animate-pulse" />
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="h-9 bg-[#E8E4DF] rounded animate-pulse" />
                     ))}
                 </div>
             </div>
         );
     }
 
-    const sorted = [...members].sort((a, b) => a.rotationPosition - b.rotationPosition);
+    const sorted = [...members].sort((a, b) => (a.rotationPosition || 99) - (b.rotationPosition || 99));
+    const totalMembers = sorted.length;
+    const potValue = contributionAmount * totalMembers;
+
+    // Build a map: position → cycle data (for members who already received)
+    const positionToHistory = {};
+    history.forEach(c => {
+        if (c.status === 'closed' && c.potRecipientPosition) {
+            positionToHistory[c.potRecipientPosition] = c;
+        }
+    });
+
+    const currentPosition = cycle?.potRecipientPosition || null;
+
+    const displayList = compact ? sorted.slice(0, 6) : sorted;
 
     return (
         <div className="bg-white border border-[#E8E4DF] rounded-2xl p-5">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-[#9E9690] mb-3">
-                Rotation Queue
+            <div className="flex items-center justify-between mb-3">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[#9E9690]">
+                    Rotation Queue
+                </div>
+                {totalMembers > 0 && (
+                    <div className="text-[10px] text-[#9E9690]">
+                        {Object.keys(positionToHistory).length} of {totalMembers} received
+                    </div>
+                )}
             </div>
 
             <div className="space-y-1">
-                {sorted.map((m) => {
+                {displayList.map((m) => {
                     const pos = m.rotationPosition;
                     const name = m.userId?.name || 'Unknown';
-                    const isDone = pos < currentPosition;
+                    const hist = positionToHistory[pos];
+                    const isDone = !!hist;
                     const isCurrent = pos === currentPosition;
+                    const isNext = !isDone && !isCurrent && pos === (currentPosition || 0) + 1;
 
                     return (
                         <div
                             key={m._id}
-                            className={`flex items-center gap-2.5 px-2 py-2 rounded-md transition ${isCurrent
-                                    ? 'bg-[#FEF3E2]'
-                                    : isDone
-                                        ? ''
-                                        : ''
+                            className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition ${isCurrent ? 'bg-[#FEF3E2]' :
+                                    isDone ? 'bg-transparent opacity-60' :
+                                        ''
                                 }`}
                         >
                             {/* Position number */}
-                            <span
-                                className={`text-sm w-5 shrink-0 font-serif ${isCurrent ? 'text-amber-600 font-bold' : 'text-[#9E9690]'
-                                    }`}
-                            >
+                            <span className={`text-[13px] w-6 shrink-0 font-serif text-center ${isCurrent ? 'text-amber-600 font-bold' :
+                                    isDone ? 'text-[#9E9690]' :
+                                        'text-[#9E9690]'
+                                }`}>
                                 {pos}
                             </span>
 
@@ -55,49 +84,56 @@ export default function RotationQueue({ members = [], currentPosition = 1, contr
                             <MemberAvatar name={name} size="sm" />
 
                             {/* Name */}
-                            <span
-                                className={`text-xs flex-1 truncate font-medium ${isDone
-                                        ? 'text-[#9E9690] line-through'
-                                        : isCurrent
-                                            ? 'text-[#7A4D08] font-bold'
-                                            : 'text-[#1C1814]'
-                                    }`}
-                            >
-                                {name?.split(' ')[0]} {name?.split(' ')[1]?.[0]}.
-                            </span>
+                            <div className="flex-1 min-w-0">
+                                <div className={`text-[12px] font-medium truncate ${isDone ? 'text-[#9E9690] line-through' :
+                                        isCurrent ? 'text-[#7A4D08] font-bold' :
+                                            'text-[#1C1814]'
+                                    }`}>
+                                    {name.split(' ')[0]} {name.split(' ')[1]?.[0]}.
+                                </div>
+                                {isDone && !compact && (
+                                    <div className="text-[10px] text-[#9E9690]">
+                                        Received {fmt(hist.actualAmount)} · {fmtDay(hist.recipientConfirmedAt)}
+                                    </div>
+                                )}
+                            </div>
 
-                            {/* Status */}
+                            {/* Status badge */}
                             {isDone && (
-                                <span className="text-[9px] font-bold text-[#2A7A4B] bg-[#EAF5EE] px-1.5 py-0.5 rounded">
-                                    Done
+                                <span className="text-[9px] font-bold text-[#2A7A4B] bg-[#EAF5EE] px-1.5 py-0.5 rounded shrink-0">
+                                    ✓ Received
                                 </span>
                             )}
                             {isCurrent && (
-                                <span className="text-[9px] font-bold text-[#B8650A] bg-[#FEF3E2] px-1.5 py-0.5 rounded">
+                                <span className="text-[9px] font-bold text-[#B8650A] bg-[#FEF3E2] px-1.5 py-0.5 rounded shrink-0">
                                     Current
                                 </span>
                             )}
-                            {!isDone && !isCurrent && (
-                                <span className="text-[9px] text-[#9E9690]">
-                                    {/* future date placeholder */}
-                                </span>
+                            {isNext && !compact && (
+                                <span className="text-[9px] text-[#9E9690] shrink-0">Next up</span>
                             )}
                         </div>
                     );
                 })}
+
+                {compact && sorted.length > 6 && (
+                    <div className="text-center pt-1 text-[11px] text-[#9E9690]">
+                        + {sorted.length - 6} more members
+                    </div>
+                )}
             </div>
 
             {/* Pot value */}
-            {contributionAmount > 0 && members.length > 0 && (
+            {contributionAmount > 0 && totalMembers > 0 && (
                 <div className="mt-4 pt-3 border-t border-[#E8E4DF] bg-[#F8F6F3] rounded-lg p-3 text-center">
-                    <div className="text-[9px] uppercase tracking-widest text-[#9E9690] mb-1">
-                        Pot value this cycle
+                    <div className="text-[9px] uppercase tracking-widest text-[#9E9690] mb-0.5">
+                        Pot value per cycle
                     </div>
-                    <div className="font-serif text-xl text-[#1C1814]">
-                        {fmt(contributionAmount * members.length)}
+                    <div className="font-serif text-[20px] text-[#1C1814]">
+                        {fmt(potValue)}
                     </div>
                     <div className="text-[10px] text-[#9E9690] mt-0.5">
-                        {members.length} members × {fmt(contributionAmount)}
+                        {totalMembers} members × {fmt(contributionAmount)}
                     </div>
                 </div>
             )}

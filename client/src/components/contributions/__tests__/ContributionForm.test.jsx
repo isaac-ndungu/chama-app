@@ -13,7 +13,7 @@ vi.mock('react-hot-toast', () => ({
 }));
 
 const mockMembers = [
-  { userId: { _id: 'user1', name: 'Kamau' }, role: 'chairman' },
+  { userId: { _id: 'user1', name: 'Kamau' }, role: 'chairperson' },
   { userId: { _id: 'user2', name: 'Wanjiru' }, role: 'treasurer' }
 ];
 
