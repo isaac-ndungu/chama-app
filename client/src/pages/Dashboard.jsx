@@ -4,40 +4,46 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import AppLayout from '../components/layout/AppLayout';
-import CycleBanner from '../components/ui/CycleBanner';
+
 import StatCard from '../components/dashboard/StatCard';
 import ContributionFeed from '../components/dashboard/ContributionFeed';
 import RotationQueue from '../components/dashboard/RotationQueue';
 import AuditFeed from '../components/dashboard/AuditFeed';
+import CycleBanner from '../components/ui/CycleBanner';
 import { useCycle } from '../hooks/useCycle';
 
 const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
-
-//  Role helpers 
-const isOfficerRole = (role) => role === 'chairperson' || role === 'treasurer';
+const isOfficerRole = (r) => r === 'chairperson' || r === 'treasurer';
 
 export default function Dashboard() {
   const { chamaId } = useParams();
-  const { user }    = useAuth();
-  const navigate    = useNavigate();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const [dashboard,  setDashboard]  = useState(null);
+  const [dashboard, setDashboard] = useState(null);
   const [contributions, setContribs] = useState([]);
-  const [members,    setMembers]    = useState([]);
-  const [auditLogs,  setAuditLogs]  = useState([]);
-  const [chama,      setChama]      = useState(null);
-  const [loading,    setLoading]    = useState(true);
-  const [role,       setRole]       = useState('member');
+  const [members, setMembers] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [chama, setChama] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState('member');
 
   const {
-    cycle, history,
-    disburse, confirmReceipt, createNext,
-    reload: reloadCycle,
+    cycle,
+    history,
+    memberCount,
+    rotationComplete,
+    rotationNumber,
+    roundsCompleteInRotation,
+    positionInRotation,
+    disburse,
+    confirmReceipt,
+    createNext,
   } = useCycle(chamaId);
 
   const [disbursing, setDisbursing] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [starting,   setStarting]   = useState(false);
+  const [starting, setStarting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,83 +75,71 @@ export default function Dashboard() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Poll contributions every 20s
   useEffect(() => {
     const interval = setInterval(() => {
       api.get(`/chamas/${chamaId}/contributions`)
         .then(res => setContribs(res.data.contributions))
-        .catch(() => {});
+        .catch(() => { });
     }, 20000);
     return () => clearInterval(interval);
   }, [chamaId]);
 
-  const isOfficer   = isOfficerRole(role);
+  const isOfficer = isOfficerRole(role);
   const isRecipient = cycle?.potRecipientId?._id === user?.id ||
-                      cycle?.potRecipientId        === user?.id;
+    cycle?.potRecipientId === user?.id;
+  const mc = memberCount || members.length;
 
   const handleDisburse = async (cycleId, ref, amount) => {
     setDisbursing(true);
-    try {
-      await disburse(cycleId, ref, amount);
-      load();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to record disbursement');
-    } finally {
-      setDisbursing(false);
-    }
+    try { await disburse(cycleId, ref, amount); load(); }
+    catch (err) { toast.error(err.response?.data?.error || 'Failed to record disbursement'); }
+    finally { setDisbursing(false); }
   };
 
   const handleConfirmReceipt = async () => {
     setConfirming(true);
-    try {
-      await confirmReceipt(cycle._id);
-      load();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to confirm receipt');
-    } finally {
-      setConfirming(false);
-    }
+    try { await confirmReceipt(cycle._id); load(); }
+    catch (err) { toast.error(err.response?.data?.error || 'Failed to confirm receipt'); }
+    finally { setConfirming(false); }
   };
 
   const handleStartNext = async (startDate, endDate) => {
     setStarting(true);
-    try {
-      await createNext(startDate, endDate);
-      load();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to start cycle');
-    } finally {
-      setStarting(false);
-    }
+    try { await createNext(startDate, endDate); load(); }
+    catch (err) { toast.error(err.response?.data?.error || 'Failed to start round'); }
+    finally { setStarting(false); }
   };
 
-  const dashCycle    = dashboard?.cycle;
+  const dashCycle = dashboard?.cycle;
   const pendingCount = dashboard?.pendingVerifications || 0;
 
-  // Find current user's rotation position for the member stats card
   const myMembership = members.find(
     m => (m.userId?._id || m.userId) === user?.id
   );
 
+  // Round label for the dashboard subtitle
+  const roundLabel = cycle
+    ? `Round ${positionInRotation} of ${mc} — Rotation ${rotationNumber}`
+    : null;
+
   return (
     <AppLayout>
-      {/* Page title */}
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="font-serif text-[26px] text-[#1C1814] leading-tight">Dashboard</h1>
           {cycle && (
             <p className="text-sm text-[#9E9690] mt-0.5">
-              Cycle {cycle.cycleNumber} —{' '}
+              {roundLabel} ·{' '}
               {cycle.startDate
                 ? new Date(cycle.startDate).toLocaleDateString('en-KE', {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                  })
+                  day: 'numeric', month: 'short', year: 'numeric',
+                })
                 : '—'}{' '}
               to{' '}
               {cycle.endDate
                 ? new Date(cycle.endDate).toLocaleDateString('en-KE', {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                  })
+                  day: 'numeric', month: 'short', year: 'numeric',
+                })
                 : '—'}
             </p>
           )}
@@ -160,14 +154,18 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/*  ROSCA Cycle Banner  */}
+      {/* ROSCA Cycle Banner */}
       <CycleBanner
         cycle={cycle}
         history={history}
         members={members}
+        memberCount={mc}
         chama={chama}
         isOfficer={isOfficer}
         isRecipient={isRecipient}
+        rotationComplete={rotationComplete}
+        rotationNumber={rotationNumber}
+        roundsCompleteInRotation={roundsCompleteInRotation}
         onDisburse={handleDisburse}
         onConfirmReceipt={handleConfirmReceipt}
         onStartNext={handleStartNext}
@@ -176,14 +174,14 @@ export default function Dashboard() {
         starting={starting}
       />
 
-      {/*  Stat cards  */}
+      {/* Stat cards */}
       <div className="grid grid-cols-4 gap-3 mb-6">
         {isOfficer ? (
           <>
             <StatCard
               label="Contributions"
               value={loading ? '...' : fmt(dashCycle?.totalCollected)}
-              sub={loading ? '' : `Cycle ${cycle?.cycleNumber} · ${dashCycle?.paidCount || 0} of ${chama?.memberCount || 0} paid`}
+              sub={loading ? '' : `Round ${positionInRotation} of ${mc} · ${dashCycle?.paidCount || 0} of ${mc} paid`}
               trend={`↑ ${contributions.filter(c => c.status === 'verified').length} verified`}
               trendType="up"
             />
@@ -232,27 +230,39 @@ export default function Dashboard() {
               valueColor={dashboard?.myLedger?.balance > 0 ? 'text-[#C0392B]' : 'text-[#2A7A4B]'}
             />
             <StatCard
-              label="Cycle Progress"
-              value={loading ? '...' : `${dashCycle?.collectionRate || 0}%`}
-              sub={`${fmt(dashCycle?.totalCollected)} collected`}
+              label="Rotation Progress"
+              value={loading ? '...' : `${roundsCompleteInRotation} of ${mc}`}
+              sub={`Members received this rotation`}
             />
             <StatCard
               label="My Pot Status"
-              value={loading ? '...' : dashboard?.myLedger?.potReceived > 0
-                ? '✓ Received'
-                : 'Not yet'}
+              value={loading ? '...'
+                : dashboard?.myLedger?.potReceived > 0
+                  ? '✓ Received'
+                  : myMembership?.rotationPosition === cycle?.potRecipientPosition
+                    ? 'Your turn now!'
+                    : 'Not yet'}
               sub={dashboard?.myLedger?.potReceived > 0
                 ? fmt(dashboard.myLedger.potReceived)
                 : myMembership?.rotationPosition
-                  ? `Position ${myMembership.rotationPosition} in queue`
+                  ? `Position ${myMembership.rotationPosition} — ${myMembership.rotationPosition > (cycle?.potRecipientPosition || 0)
+                    ? `${myMembership.rotationPosition - (cycle?.potRecipientPosition || 0)} rounds away`
+                    : 'already received this rotation'
+                  }`
                   : 'In queue'}
-              valueColor={dashboard?.myLedger?.potReceived > 0 ? 'text-[#2A7A4B]' : undefined}
+              valueColor={
+                myMembership?.rotationPosition === cycle?.potRecipientPosition
+                  ? 'text-[#2A7A4B]'
+                  : dashboard?.myLedger?.potReceived > 0
+                    ? 'text-[#2A7A4B]'
+                    : undefined
+              }
             />
           </>
         )}
       </div>
 
-      {/* ── Main content grid ── */}
+      {/* Main content grid */}
       <div className="grid grid-cols-[1fr_320px] gap-5">
         <ContributionFeed contributions={contributions} loading={loading} />
         <div className="flex flex-col gap-4">
@@ -261,6 +271,8 @@ export default function Dashboard() {
             history={history}
             cycle={cycle}
             contributionAmount={chama?.contributionAmount}
+            memberCount={mc}
+            rotationNumber={rotationNumber}
             loading={loading}
             compact={true}
           />

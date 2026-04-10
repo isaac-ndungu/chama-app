@@ -2,10 +2,10 @@ import Cycle from '../models/Cycle.js';
 import Chama from '../models/Chama.js';
 import Membership from '../models/Membership.js';
 import Contribution from '../models/Contribution.js';
+import MemberLedger from '../models/MemberLedger.js';
 import AppError from '../utils/AppError.js';
 import catchAsync from '../utils/catchAsync.js';
 import { createAuditLog } from '../services/auditService.js';
-import { MemberLedger } from '../models/index.js';
 
 
 // create the next round automatically 

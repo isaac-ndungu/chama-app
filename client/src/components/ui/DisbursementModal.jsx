@@ -2,7 +2,14 @@ import { useState } from 'react';
 
 const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
 
-export default function DisbursementModal({ cycle, onConfirm, onClose, loading }) {
+export default function DisbursementModal({
+    cycle,
+    posInRotation,
+    totalInRotation,
+    onConfirm,
+    onClose,
+    loading,
+}) {
     const [ref, setRef] = useState('');
     const [amount, setAmount] = useState(cycle?.actualAmount || cycle?.expectedAmount || '');
     const [refError, setRefError] = useState('');
@@ -20,40 +27,54 @@ export default function DisbursementModal({ cycle, onConfirm, onClose, loading }
         onConfirm(ref.trim(), parsed);
     };
 
-    return (
-        <div className="fixed inset-0 bg-[#1C1814]/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-white rounded-2xl w-full max-w-110 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+    const isLastInRotation = posInRotation >= totalInRotation;
 
+    return (
+        <div
+            className="fixed inset-0 bg-[#1C1814]/50 z-50 flex items-center justify-center p-4"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white rounded-2xl w-full max-w-110 shadow-2xl overflow-hidden"
+                onClick={e => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="bg-[#1C1814] px-6 py-5">
                     <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40 mb-1">
-                        Record Pot Disbursement
+                        Record Pot Disbursement ·{' '}
+                        Round {posInRotation} of {totalInRotation}
                     </div>
                     <div className="font-serif text-[20px] text-white">
-                        Cycle {cycle.cycleNumber} — {cycle.potRecipientId?.name}
+                        {cycle.potRecipientId?.name}
                     </div>
                     <div className="text-[12px] text-white/50 mt-0.5">
                         Position {cycle.potRecipientPosition} in rotation
+                        {isLastInRotation && ' · Last recipient this rotation'}
                     </div>
                 </div>
 
                 {/* Body */}
                 <div className="px-6 py-5">
-                    <div className="bg-[#FEF3E2] rounded-xl px-4 py-3 mb-5">
+                    {/* Recipient summary */}
+                    <div className="bg-[#FEF3E2] rounded-xl px-4 py-3 mb-4">
                         <div className="text-[10px] font-bold uppercase tracking-widest text-[#9E9690] mb-1">
-                            Pot being disbursed to
+                            Disbursing pot to
                         </div>
                         <div className="font-semibold text-[15px] text-[#1C1814]">
                             {cycle.potRecipientId?.name}
                         </div>
                         <div className="text-[12px] text-[#9E9690] mt-0.5">
-                            Expected: {fmt(cycle.expectedAmount)} · Actual collected: {fmt(cycle.actualAmount)}
+                            Expected: {fmt(cycle.expectedAmount)} · Verified collected: {fmt(cycle.actualAmount)}
                         </div>
                     </div>
 
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-5 text-[12px] text-[#B8650A]">
-                        ℹ After you record this, <strong>{cycle.potRecipientId?.name}</strong> will need to
-                        confirm they received the money. The cycle will not close until they confirm.
+                    {/* Confirmation notice */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-5 text-[12px] text-[#1A3E8C]">
+                        ℹ After you record this,{' '}
+                        <strong>{cycle.potRecipientId?.name}</strong> must confirm receipt.
+                        {isLastInRotation
+                            ? ' This is the last round of this rotation — confirming will complete the rotation.'
+                            : ` Once confirmed, Round ${posInRotation + 1} will start automatically.`}
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,7 +92,7 @@ export default function DisbursementModal({ cycle, onConfirm, onClose, loading }
                                 className="w-full h-10 px-3 border border-[#E8E4DF] rounded-lg text-[13px] focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                             />
                             <p className="text-[11px] text-[#9E9690] mt-1">
-                                Pre-filled with total collected — adjust if partial disbursement
+                                Pre-filled from verified contributions · Adjust if partial disbursement
                             </p>
                         </div>
 
@@ -94,7 +115,8 @@ export default function DisbursementModal({ cycle, onConfirm, onClose, loading }
                                 <p className="text-[11px] text-[#C0392B] mt-1">⚠ {refError}</p>
                             )}
                             <p className="text-[11px] text-[#9E9690] mt-1">
-                                The M-Pesa confirmation code from the transfer to {cycle.potRecipientId?.name}
+                                M-Pesa confirmation code from the transfer to{' '}
+                                {cycle.potRecipientId?.name}
                             </p>
                         </div>
 

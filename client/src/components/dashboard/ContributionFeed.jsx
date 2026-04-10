@@ -73,9 +73,7 @@ export default function ContributionFeed({ contributions = [], loading }) {
                                 <MemberAvatar name={name} />
                                 <div>
                                     <div className="font-semibold text-[13px] text-[#1C1814]">{name}</div>
-                                    <div className="text-[11px] text-[#9E9690]">
-                                        Pos. {c.memberId?.rotationPosition || '—'}
-                                    </div>
+                                    
                                 </div>
                             </div>
 
