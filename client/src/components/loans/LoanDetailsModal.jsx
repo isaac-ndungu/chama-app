@@ -142,7 +142,7 @@ export default function LoanDetailsModal({ loan, members, onClose }) {
           ))}
         </div>
 
-        {/* ── DETAILS TAB ── */}
+        {/*    DETAILS TAB    */}
         {tab === 'details' && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -211,7 +211,7 @@ export default function LoanDetailsModal({ loan, members, onClose }) {
           </div>
         )}
 
-        {/* ── VOTES TAB ── */}
+        {/*    VOTES TAB    */}
         {tab === 'votes' && (
           <div className="space-y-4 max-h-[400px] overflow-y-auto">
             {/* Approved */}
@@ -335,7 +335,7 @@ export default function LoanDetailsModal({ loan, members, onClose }) {
           </div>
         )}
 
-        {/* ── REPAYMENTS TAB ── */}
+        {/*    REPAYMENTS TAB    */}
         {tab === 'repayments' && (
           <div className="space-y-3 max-h-[400px] overflow-y-auto">
             {loan.repayments && loan.repayments.length > 0 ? (

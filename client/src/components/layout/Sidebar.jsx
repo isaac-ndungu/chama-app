@@ -24,7 +24,7 @@ const NAV = [
   { to: 'settings', label: 'Settings', Icon: MdSettings },
 ];
 
-export default function Sidebar({ collapsed }) {
+export default function Sidebar({ collapsed, mobileOpen, onMobileClose }) {
   const { chamaId } = useParams();
   const { user, logout: ctxLogout } = useAuth();
   const navigate = useNavigate();
@@ -70,14 +70,19 @@ export default function Sidebar({ collapsed }) {
     }
   };
 
+  // On mobile the sidebar is always "expanded" (not collapsed)
+  const effectiveCollapsed = collapsed;
+
   return (
     <aside
-      className="bg-[#1C1814] flex flex-col fixed top-0 left-0 bottom-0 z-50 h-screen overflow-hidden transition-all duration-300"
-      style={{ width: collapsed ? 64 : 220 }}
+      className={`bg-[#1C1814] flex flex-col fixed top-0 left-0 bottom-0 z-50 h-screen overflow-hidden transition-all duration-300
+        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0`}
+      style={{ width: effectiveCollapsed ? 64 : 220 }}
     >
       {/* HEADER */}
       <div className="px-4 pt-6 pb-4 border-b border-white/10 flex items-center overflow-hidden">
-        {collapsed ? (
+        {effectiveCollapsed ? (
           // Single amber initial as wordmark when collapsed
           <span className="font-serif text-[20px] text-amber-500 mx-auto">C</span>
         ) : (
@@ -93,7 +98,7 @@ export default function Sidebar({ collapsed }) {
       </div>
 
       {/* CHAMA SWITCHER — hidden when collapsed */}
-      {!collapsed && (
+      {!effectiveCollapsed && (
         <div className="px-3 py-3 relative">
           <button
             onClick={() => setShowSwitcher(v => !v)}
@@ -117,7 +122,7 @@ export default function Sidebar({ collapsed }) {
               {chamas.map(c => (
                 <button
                   key={c._id}
-                  onClick={() => { navigate(`/chamas/${c._id}`); setShowSwitcher(false); }}
+                  onClick={() => { navigate(`/chamas/${c._id}`); setShowSwitcher(false); onMobileClose?.(); }}
                   className={`w-full text-left px-3 py-2.5 text-xs transition ${c._id === chamaId
                     ? 'text-amber-500 bg-white/5'
                     : 'text-white/70 hover:bg-white/5 hover:text-white'
@@ -128,7 +133,7 @@ export default function Sidebar({ collapsed }) {
                 </button>
               ))}
               <button
-                onClick={() => { navigate('/'); setShowSwitcher(false); }}
+                onClick={() => { navigate('/'); setShowSwitcher(false); onMobileClose?.(); }}
                 className="w-full text-left px-3 py-2.5 text-xs text-amber-500/80 hover:bg-white/5 border-t border-white/10 transition"
               >
                 + Switch chama
@@ -139,7 +144,7 @@ export default function Sidebar({ collapsed }) {
       )}
 
       {/* MENU LABEL */}
-      {!collapsed && (
+      {!effectiveCollapsed && (
         <div className="px-5 pt-2 pb-1">
           <span className="text-[9px] font-semibold uppercase tracking-widest text-white/30">
             Menu
@@ -154,10 +159,11 @@ export default function Sidebar({ collapsed }) {
             key={label}
             to={to === '' ? `/chamas/${chamaId}` : `/chamas/${chamaId}/${to}`}
             end={to === ''}
-            title={collapsed ? label : undefined}
+            title={effectiveCollapsed ? label : undefined}
+            onClick={() => onMobileClose?.()}
             className={({ isActive }) =>
               `relative flex items-center gap-3 py-2.5 text-[13px] transition border-l-[3px] group
-              ${collapsed ? 'justify-center px-0' : 'px-4'}
+              ${effectiveCollapsed ? 'justify-center px-0' : 'px-4'}
               ${isActive
                 ? 'text-amber-500 bg-amber-500/10 border-amber-500'
                 : 'text-white/60 hover:text-white hover:bg-white/5 border-transparent'
@@ -170,10 +176,10 @@ export default function Sidebar({ collapsed }) {
                   className={`text-[18px] shrink-0 transition ${isActive ? 'text-amber-500' : 'text-white/50 group-hover:text-white'
                     }`}
                 />
-                {!collapsed && <span className="truncate">{label}</span>}
+                {!effectiveCollapsed && <span className="truncate">{label}</span>}
 
                 {/* Tooltip visible only in collapsed mode */}
-                {collapsed && (
+                {effectiveCollapsed && (
                   <span className="absolute left-full ml-3 px-2.5 py-1.5 bg-[#2A2420] text-white text-[12px] rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 shadow-lg border border-white/10 z-50">
                     {label}
                   </span>
@@ -186,7 +192,7 @@ export default function Sidebar({ collapsed }) {
 
       {/* USER + LOGOUT */}
       <div className="px-3 py-3 border-t border-white/10">
-        {!collapsed ? (
+        {!effectiveCollapsed ? (
           <>
             <div className="flex items-center gap-3 mb-3 px-1">
               <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-[11px] font-bold shrink-0">

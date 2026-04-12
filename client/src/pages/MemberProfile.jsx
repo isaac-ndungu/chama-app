@@ -46,7 +46,7 @@ export default function MemberProfile() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="grid grid-cols-[1fr_320px] gap-6 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6 animate-pulse">
           <div className="bg-white border border-[#E8E4DF] rounded-2xl p-7 space-y-4">
             {[1,2,3,4].map(i => <div key={i} className="h-12 bg-[#E8E4DF] rounded" />)}
           </div>
@@ -82,22 +82,22 @@ export default function MemberProfile() {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="font-serif text-[26px] text-[#1C1814]">{userName}</h1>
           <p className="text-sm text-[#9E9690] mt-0.5">Member Profile</p>
         </div>
         <button
           onClick={() => navigate(`/chamas/${chamaId}/members`)}
-          className="text-[13px] text-[#6B6560] border border-[#E8E4DF] h-9 px-4 rounded-lg hover:bg-[#F8F6F3] transition"
+          className="text-[13px] text-[#6B6560] border border-[#E8E4DF] h-9 px-4 rounded-lg hover:bg-[#F8F6F3] transition whitespace-nowrap"
         >
           ← Back to Members
         </button>
       </div>
 
-      <div className="grid grid-cols-[1fr_320px] gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6">
 
-        {/* ── Main Column ─────────────────────────────────────────────────────── */}
+        {/*    Main Column       */}
         <div className="space-y-5">
 
           {/* Identity card */}
@@ -109,14 +109,14 @@ export default function MemberProfile() {
                 <p className="text-[13px] text-[#9E9690] mt-0.5">
                   Position {member.rotationPosition || '—'} in rotation
                 </p>
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
                   <RoleBadge role={member.role} />
                   <StatusBadge status={member.status} />
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {[
                 ['Email', userEmail],
                 ['Phone', userPhone],
@@ -133,7 +133,7 @@ export default function MemberProfile() {
 
           {/* Recent contributions */}
           <div className="bg-white border border-[#E8E4DF] rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E4DF]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E4DF] gap-3 flex-wrap">
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#9E9690]">
                 Recent Contributions
               </span>
@@ -155,7 +155,7 @@ export default function MemberProfile() {
               contributions.slice(0, 5).map(c => (
                 <div
                   key={c._id}
-                  className="flex items-center justify-between px-6 py-3.5 border-b border-[#F8F6F3] last:border-0 hover:bg-[#F8F6F3] transition"
+                  className="flex items-center justify-between px-6 py-3.5 border-b border-[#F8F6F3] last:border-0 hover:bg-[#F8F6F3] transition gap-3 flex-wrap"
                 >
                   <div>
                     <div className="font-semibold text-[13px] text-[#1C1814]">{fmt(c.amount)}</div>
@@ -171,7 +171,7 @@ export default function MemberProfile() {
           </div>
         </div>
 
-        {/* ── Right Sidebar ─────────────────────────────────────────────────── */}
+        {/*    Right Sidebar   */}
         <div className="space-y-4">
 
           {/* Summary card */}

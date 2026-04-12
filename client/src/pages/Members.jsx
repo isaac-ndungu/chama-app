@@ -112,7 +112,7 @@ export default function Members() {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="flex items-start justify-between mb-5">
+      <div className="flex items-start justify-between mb-5 gap-3 flex-wrap">
         <div>
           <h1 className="font-serif text-[26px] text-[#1C1814]">Members</h1>
           <p className="text-sm text-[#9E9690] mt-0.5">
@@ -122,7 +122,7 @@ export default function Members() {
         {can('manage_members') && (
           <button
             onClick={() => setShowInvite(true)}
-            className="bg-amber-600 text-white h-10 px-5 rounded-lg font-semibold text-sm hover:bg-amber-700 transition"
+            className="bg-amber-600 text-white h-10 px-5 rounded-lg font-semibold text-sm hover:bg-amber-700 transition whitespace-nowrap"
           >
             + Add Member
           </button>
@@ -145,11 +145,11 @@ export default function Members() {
         starting={starting}
       />
 
-      <div className="grid grid-cols-[1fr_300px] gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
 
         {/*  Member Table  */}
-        <div className="bg-white border border-[#E8E4DF] rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E4DF]">
+        <div className="bg-white border border-[#E8E4DF] rounded-2xl overflow-hidden overflow-x-auto">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E4DF] gap-3 flex-wrap">
             <span className="font-bold text-[14px] text-[#1C1814]">Member Directory</span>
             <input
               value={search}
@@ -159,116 +159,118 @@ export default function Members() {
             />
           </div>
 
-          <div className="grid grid-cols-[44px_1fr_120px_120px_140px_90px] px-5 py-2.5 border-b border-[#E8E4DF]">
-            {['#', 'Member', 'Role', 'Cycle Status', 'Pot Status', ''].map(h => (
-              <div key={h} className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9E9690]">
-                {h}
-              </div>
-            ))}
-          </div>
-
-          {loading ? (
-            [1, 2, 3, 4].map(i => (
-              <div key={i} className="grid grid-cols-[44px_1fr_120px_120px_140px_90px] px-5 py-4 border-b border-[#E8E4DF] animate-pulse">
-                <div className="h-3 bg-[#E8E4DF] rounded" />
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[#E8E4DF]" />
-                  <div className="space-y-1.5">
-                    <div className="h-3 bg-[#E8E4DF] rounded w-28" />
-                    <div className="h-2.5 bg-[#E8E4DF] rounded w-20" />
-                  </div>
+          <div className="min-w-140">
+            <div className="grid grid-cols-[44px_1fr_120px_120px_140px_90px] px-5 py-2.5 border-b border-[#E8E4DF]">
+              {['#', 'Member', 'Role', 'Cycle Status', 'Pot Status', ''].map(h => (
+                <div key={h} className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9E9690]">
+                  {h}
                 </div>
-                {[1, 2, 3, 4].map(j => <div key={j} className="h-3 bg-[#E8E4DF] rounded self-center" />)}
-              </div>
-            ))
-          ) : (
-            displayed.map(m => {
-              const pos = m.rotationPosition;
-              const hist = positionToHistory[pos];
-              const received = !!hist;
-              const isCurrent = pos === cycle?.potRecipientPosition &&
-                ['active', 'collection', 'disbursed'].includes(cycle?.status);
+              ))}
+            </div>
 
-              return (
-                <div
-                  key={m._id}
-                  className="grid grid-cols-[44px_1fr_120px_120px_140px_90px] px-5 py-4 border-b border-[#E8E4DF] last:border-0 hover:bg-[#F8F6F3] transition items-center cursor-pointer"
-                  onClick={() => navigate(`/chamas/${chamaId}/members/${m.userId?._id}`)}
-                >
-                  {/* Position — highlighted if this is the current cycle recipient */}
-                  <div className={`font-serif text-[20px] leading-none ${isCurrent ? 'text-amber-500' : 'text-[#E8E4DF]'
-                    }`}>
-                    {pos}
-                  </div>
-
-                  {/* Member */}
+            {loading ? (
+              [1, 2, 3, 4].map(i => (
+                <div key={i} className="grid grid-cols-[44px_1fr_120px_120px_140px_90px] px-5 py-4 border-b border-[#E8E4DF] animate-pulse">
+                  <div className="h-3 bg-[#E8E4DF] rounded" />
                   <div className="flex items-center gap-3">
-                    <MemberAvatar name={m.userId?.name} size="md" />
-                    <div>
-                      <div className="font-semibold text-[13px] text-[#1C1814]">{m.userId?.name}</div>
-                      <div className="text-[11px] text-[#9E9690]">
-                        Joined {m.joinedAt
-                          ? new Date(m.joinedAt).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' })
-                          : '—'}
-                      </div>
+                    <div className="w-9 h-9 rounded-full bg-[#E8E4DF]" />
+                    <div className="space-y-1.5">
+                      <div className="h-3 bg-[#E8E4DF] rounded w-28" />
+                      <div className="h-2.5 bg-[#E8E4DF] rounded w-20" />
                     </div>
                   </div>
-
-                  {/* Role */}
-                  <div><RoleBadge role={m.role} /></div>
-
-                  {/* Cycle status */}
-                  <div>
-                    {isCurrent ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#FEF3E2] text-[#B8650A]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#B8650A]" /> Current
-                      </span>
-                    ) : (
-                      <StatusBadge status={m.cycleStatus || 'pending'} />
-                    )}
-                  </div>
-
-                  {/* Pot status */}
-                  <div>
-                    {received ? (
-                      <div>
-                        <div className="text-[10px] font-bold text-[#2A7A4B]">✓ Received</div>
-                        <div className="text-[10px] text-[#9E9690]">{fmtDay(hist.recipientConfirmedAt)}</div>
-                      </div>
-                    ) : isCurrent && cycle?.status === 'disbursed' ? (
-                      <div className="text-[10px] font-bold text-[#1A3E8C]">Awaiting confirmation</div>
-                    ) : isCurrent ? (
-                      <div className="text-[10px] font-bold text-[#B8650A]">Collecting now</div>
-                    ) : (
-                      <div className="text-[10px] text-[#9E9690]">Position {pos}</div>
-                    )}
-                  </div>
-
-                  {/* Profile button */}
-                  <div onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => navigate(`/chamas/${chamaId}/members/${m.userId?._id}`)}
-                      className="text-[12px] text-amber-600 border border-amber-400 px-3 h-8 rounded-lg hover:bg-amber-50 transition"
-                    >
-                      Profile
-                    </button>
-                  </div>
+                  {[1, 2, 3, 4].map(j => <div key={j} className="h-3 bg-[#E8E4DF] rounded self-center" />)}
                 </div>
-              );
-            })
-          )}
+              ))
+            ) : (
+              displayed.map(m => {
+                const pos = m.rotationPosition;
+                const hist = positionToHistory[pos];
+                const received = !!hist;
+                const isCurrent = pos === cycle?.potRecipientPosition &&
+                  ['active', 'collection', 'disbursed'].includes(cycle?.status);
 
-          {filtered.length > 8 && (
-            <div className="px-5 py-3 border-t border-[#E8E4DF] text-[13px] text-[#9E9690]">
-              Showing {displayed.length} of {filtered.length} ·{' '}
-              <button
-                onClick={() => setShowAll(v => !v)}
-                className="text-amber-600 font-medium hover:underline"
-              >
-                {showAll ? 'Show less' : 'Show all'}
-              </button>
-            </div>
-          )}
+                return (
+                  <div
+                    key={m._id}
+                    className="grid grid-cols-[44px_1fr_120px_120px_140px_90px] px-5 py-4 border-b border-[#E8E4DF] last:border-0 hover:bg-[#F8F6F3] transition items-center cursor-pointer"
+                    onClick={() => navigate(`/chamas/${chamaId}/members/${m.userId?._id}`)}
+                  >
+                    {/* Position — highlighted if this is the current cycle recipient */}
+                    <div className={`font-serif text-[20px] leading-none ${isCurrent ? 'text-amber-500' : 'text-[#E8E4DF]'
+                      }`}>
+                      {pos}
+                    </div>
+
+                    {/* Member */}
+                    <div className="flex items-center gap-3">
+                      <MemberAvatar name={m.userId?.name} size="md" />
+                      <div>
+                        <div className="font-semibold text-[13px] text-[#1C1814]">{m.userId?.name}</div>
+                        <div className="text-[11px] text-[#9E9690]">
+                          Joined {m.joinedAt
+                            ? new Date(m.joinedAt).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' })
+                            : '—'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Role */}
+                    <div><RoleBadge role={m.role} /></div>
+
+                    {/* Cycle status */}
+                    <div>
+                      {isCurrent ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#FEF3E2] text-[#B8650A]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#B8650A]" /> Current
+                        </span>
+                      ) : (
+                        <StatusBadge status={m.cycleStatus || 'pending'} />
+                      )}
+                    </div>
+
+                    {/* Pot status */}
+                    <div>
+                      {received ? (
+                        <div>
+                          <div className="text-[10px] font-bold text-[#2A7A4B]">✓ Received</div>
+                          <div className="text-[10px] text-[#9E9690]">{fmtDay(hist.recipientConfirmedAt)}</div>
+                        </div>
+                      ) : isCurrent && cycle?.status === 'disbursed' ? (
+                        <div className="text-[10px] font-bold text-[#1A3E8C]">Awaiting confirmation</div>
+                      ) : isCurrent ? (
+                        <div className="text-[10px] font-bold text-[#B8650A]">Collecting now</div>
+                      ) : (
+                        <div className="text-[10px] text-[#9E9690]">Position {pos}</div>
+                      )}
+                    </div>
+
+                    {/* Profile button */}
+                    <div onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => navigate(`/chamas/${chamaId}/members/${m.userId?._id}`)}
+                        className="text-[12px] text-amber-600 border border-amber-400 px-3 h-8 rounded-lg hover:bg-amber-50 transition"
+                      >
+                        Profile
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {filtered.length > 8 && (
+              <div className="px-5 py-3 border-t border-[#E8E4DF] text-[13px] text-[#9E9690]">
+                Showing {displayed.length} of {filtered.length} ·{' '}
+                <button
+                  onClick={() => setShowAll(v => !v)}
+                  className="text-amber-600 font-medium hover:underline"
+                >
+                  {showAll ? 'Show less' : 'Show all'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/*  Rotation Queue + Payout History  */}

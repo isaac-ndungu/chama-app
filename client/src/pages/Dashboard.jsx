@@ -175,7 +175,7 @@ export default function Dashboard() {
       />
 
       {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {isOfficer ? (
           <>
             <StatCard
@@ -263,7 +263,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main content grid */}
-      <div className="grid grid-cols-[1fr_320px] gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
         <ContributionFeed contributions={contributions} loading={loading} />
         <div className="flex flex-col gap-4">
           <RotationQueue

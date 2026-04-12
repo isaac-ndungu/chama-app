@@ -104,7 +104,7 @@ export default function LogContribution() {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="font-serif text-[26px] text-[#1C1814]">Record Contribution</h1>
           <p className="text-sm text-[#9E9690] mt-0.5">
@@ -118,7 +118,7 @@ export default function LogContribution() {
         </div>
         <button
           onClick={() => navigate(`/chamas/${chamaId}/contributions`)}
-          className="text-[13px] text-[#6B6560] border border-[#E8E4DF] h-9 px-4 rounded-lg hover:bg-[#F8F6F3] transition"
+          className="text-[13px] text-[#6B6560] border border-[#E8E4DF] h-9 px-4 rounded-lg hover:bg-[#F8F6F3] transition whitespace-nowrap"
         >
           ← Back
         </button>
@@ -131,7 +131,7 @@ export default function LogContribution() {
         </div>
       )}
 
-      <div className="grid grid-cols-[1fr_320px] gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
         {/* Form */}
         <div className="bg-white border border-[#E8E4DF] rounded-2xl p-7">
           <div className="text-[10px] font-bold uppercase tracking-widest text-[#9E9690] mb-5 pb-3 border-b border-[#E8E4DF]">
@@ -160,7 +160,7 @@ export default function LogContribution() {
             </div>
 
             {/* Amount + Date */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">
                   Amount (KSh) *
@@ -238,7 +238,7 @@ export default function LogContribution() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-1">
+            <div className="flex gap-3 pt-1 flex-wrap">
               <button
                 type="submit"
                 disabled={submitting || !dashboard?.cycle}

@@ -14,7 +14,7 @@ const formatRole = (role) => {
 function Row({ label, children }) {
     return (
         <div className="flex justify-between items-start py-3 border-b border-[#F8F6F3] last:border-0">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9E9690] flex-shrink-0 w-36">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9E9690] shrink-0 w-36">
                 {label}
             </span>
             <span className="text-[13px] text-[#1C1814] text-right flex-1">{children}</span>
@@ -50,7 +50,7 @@ export default function ContributionDetailModal({ contribution, members = [], on
             onClick={onClose}
         >
             <div
-                className="bg-white rounded-2xl w-full max-w-[460px] shadow-2xl overflow-hidden"
+                className="bg-white rounded-2xl w-full max-w-115 shadow-2xl overflow-hidden"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header strip */}
@@ -75,7 +75,7 @@ export default function ContributionDetailModal({ contribution, members = [], on
                     <div className="mb-4 pb-4 border-b border-[#F8F6F3]">
                         <div className="text-[9px] font-bold uppercase tracking-widest text-[#9E9690] mb-3">Member</div>
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-[#FEF3E2] flex items-center justify-center text-[#7A4D08] font-bold text-sm flex-shrink-0">
+                            <div className="w-9 h-9 rounded-full bg-[#FEF3E2] flex items-center justify-center text-[#7A4D08] font-bold text-sm shrink-0">
                                 {c.memberId?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '??'}
                             </div>
                             <div>

@@ -155,7 +155,7 @@ export default function AuditLog() {
 
   return (
     <AppLayout>
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="font-serif text-[26px] text-[#1C1814]">Audit Log</h1>
           <p className="text-[13px] text-[#9E9690] mt-0.5">
@@ -164,7 +164,7 @@ export default function AuditLog() {
         </div>
         <button
           onClick={handleExportPDF}
-          className="text-[13px] text-amber-600 border border-amber-400 h-10 px-5 rounded-lg hover:bg-amber-50 transition font-semibold"
+          className="text-[13px] text-amber-600 border border-amber-400 h-10 px-5 rounded-lg hover:bg-amber-50 transition font-semibold whitespace-nowrap"
         >
           Export PDF
         </button>
@@ -232,11 +232,11 @@ export default function AuditLog() {
             return (
               <div
                 key={log._id || i}
-                className={`flex gap-5 px-6 py-4 border-b border-[#E8E4DF] last:border-0 ${isPayoutAction ? 'bg-[#FEF3E2]/40' : ''
+                className={`flex gap-3 sm:gap-5 px-4 sm:px-6 py-4 border-b border-[#E8E4DF] last:border-0 ${isPayoutAction ? 'bg-[#FEF3E2]/40' : ''
                   }`}
               >
                 {/* Timestamp */}
-                <div className="min-w-26 shrink-0">
+                <div className="min-w-20 sm:min-w-26 shrink-0">
                   <div className="font-mono text-[11px] text-[#9E9690] leading-tight">{date}</div>
                   <div className="font-mono text-[11px] text-[#9E9690] leading-tight">{time}</div>
                 </div>
@@ -248,7 +248,7 @@ export default function AuditLog() {
                     {' '}{withoutActor}
                   </div>
                   {detail && (
-                    <div className="text-[12px] text-[#6B6560] mt-0.5">{detail}</div>
+                    <div className="text-[12px] text-[#6B6560] mt-0.5 wrap-break-word">{detail}</div>
                   )}
                 </div>
 

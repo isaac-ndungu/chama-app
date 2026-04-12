@@ -140,7 +140,7 @@ function NotificationPanel({ chamaId, currentUserId, onClose, onMarkAllRead }) {
   };
 
   return (
-    <div className="absolute top-[calc(100%+8px)] right-0 w-[340px] max-h-[480px] bg-white border border-[#E8E4DF] rounded-xl shadow-xl flex flex-col overflow-hidden z-[100]">
+    <div className="absolute top-[calc(100%+8px)] right-0 w-[320px] sm:w-85 max-h-120 bg-white border border-[#E8E4DF] rounded-xl shadow-xl flex flex-col overflow-hidden z-100">
       <div className="flex justify-between items-center px-4 py-3 border-b border-[#E8E4DF]">
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-[#1C1814]">Notifications</span>
@@ -198,8 +198,8 @@ function NotificationPanel({ chamaId, currentUserId, onClose, onMarkAllRead }) {
   );
 }
 
-// ── TopBar ────────────────────────────────────────────────────────────────────
-export default function TopBar({ chama, cycle, pendingCount, collapsed, onToggleCollapse }) {
+//    TopBar                                                                     
+export default function TopBar({ chama, cycle, pendingCount, collapsed, onToggleCollapse, onMobileMenuOpen }) {
   const { user } = useAuth();
   const { chamaId } = useParams();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -239,13 +239,22 @@ export default function TopBar({ chama, cycle, pendingCount, collapsed, onToggle
 
   return (
     <header className="h-14 bg-white border-b border-[#E8E4DF] flex items-center px-4 justify-between sticky top-0 z-40">
-      {/* Left: collapse toggle + chama info */}
-      <div className="flex items-center gap-3">
-        {/* Sidebar collapse toggle */}
+      {/* Left: mobile menu + collapse toggle + chama info */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        {/* Mobile hamburger — visible only below lg breakpoint */}
+        <button
+          onClick={onMobileMenuOpen}
+          title="Open menu"
+          className="p-1.5 rounded-lg text-[#9E9690] hover:text-[#1C1814] hover:bg-[#F8F6F3] transition lg:hidden"
+        >
+          <MdMenu className="w-5 h-5" />
+        </button>
+
+        {/* Sidebar collapse toggle — visible only on lg+ */}
         <button
           onClick={onToggleCollapse}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="p-1.5 rounded-lg text-[#9E9690] hover:text-[#1C1814] hover:bg-[#F8F6F3] transition"
+          className="p-1.5 rounded-lg text-[#9E9690] hover:text-[#1C1814] hover:bg-[#F8F6F3] transition hidden lg:block"
         >
           {collapsed
             ? <MdMenu className="w-5 h-5" />
@@ -253,23 +262,23 @@ export default function TopBar({ chama, cycle, pendingCount, collapsed, onToggle
           }
         </button>
 
-        <span className="font-bold text-[15px] text-[#1C1814]">
+        <span className="font-bold text-[15px] text-[#1C1814] truncate">
           {chama?.name || 'Loading...'}
         </span>
         {cycle && (
-          <span className="bg-[#FEF3E2] text-[#7A4D08] text-[11px] font-semibold px-2.5 py-0.5 rounded">
+          <span className="bg-[#FEF3E2] text-[#7A4D08] text-[11px] font-semibold px-2.5 py-0.5 rounded whitespace-nowrap hidden sm:inline">
             Cycle {cycle.cycleNumber} of {chama?.totalCycles || '—'}
           </span>
         )}
         {cycle?.potRecipientId?.name && (
-          <span className="text-xs text-[#9E9690]">
+          <span className="text-xs text-[#9E9690] hidden md:inline">
             Next: {cycle.potRecipientId.name}
           </span>
         )}
       </div>
 
       {/* Right: bell + avatar */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <div className="relative">
           <button
             ref={bellRef}
@@ -282,7 +291,7 @@ export default function TopBar({ chama, cycle, pendingCount, collapsed, onToggle
               <path d="M10 2a6 6 0 00-6 6v2.586l-1.707 1.707A1 1 0 003 14h14a1 1 0 00.707-1.707L16 10.586V8a6 6 0 00-6-6zM10 18a2 2 0 01-2-2h4a2 2 0 01-2 2z" />
             </svg>
             {unread > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-amber-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center border-[1.5px] border-white px-0.5">
+              <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 bg-amber-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center border-[1.5px] border-white px-0.5">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}
@@ -300,7 +309,7 @@ export default function TopBar({ chama, cycle, pendingCount, collapsed, onToggle
           )}
         </div>
 
-        <button className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-[11px] font-bold hover:opacity-90 transition">
+        <button className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-[11px] font-bold hover:opacity-90 transition shrink-0">
           {initials(user?.name)}
         </button>
       </div>

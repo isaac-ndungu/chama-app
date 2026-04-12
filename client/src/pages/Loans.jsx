@@ -16,7 +16,7 @@ import toast from 'react-hot-toast';
 const fmt = (n) => `KSh ${Number(n || 0).toLocaleString('en-KE')}`;
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
-// ── Voter Roll ────────────────────────────────────────────────────────────────
+//     Voter Roll                                                                                                 
 function VoterRoll({ loan, members, currentUserId }) {
   const eligible = members.filter(m => {
     const uid = m.userId?._id || m.userId;
@@ -43,7 +43,7 @@ function VoterRoll({ loan, members, currentUserId }) {
           });
 
           return (
-            <div key={m._id} className="flex items-center gap-3 px-4 py-3">
+            <div key={m._id} className="flex items-center gap-3 px-4 py-3 flex-wrap">
               <MemberAvatar name={name} size="sm" />
               <span className="flex-1 text-[13px] font-semibold text-[#1C1814]">{name}</span>
               <RoleBadge role={m.role} />
@@ -65,7 +65,7 @@ function VoterRoll({ loan, members, currentUserId }) {
   );
 }
 
-// ── Loan Card (Active/History) ────────────────────────────────────────────────
+//     Loan Card (Active/History)                                                                         
 function LoanCard({ loan, isOfficer, onRecordRepayment, onViewDetails }) {
   const isOverdue = loan.status === 'active' && new Date(loan.dueDate) < new Date();
   const pct = loan.totalDue > 0 ? Math.round((loan.totalRepaid / loan.totalDue) * 100) : 0;
@@ -73,7 +73,7 @@ function LoanCard({ loan, isOfficer, onRecordRepayment, onViewDetails }) {
 
   return (
     <div className={`bg-white border rounded-2xl p-5 ${isOverdue ? 'border-l-4 border-l-[#C0392B] border-[#E8E4DF]' : 'border-[#E8E4DF]'}`}>
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
         <div>
           <div className="font-bold text-[15px] text-[#1C1814]">{loan.borrowerId?.name}</div>
           <div className="text-[12px] text-[#9E9690] mt-0.5">
@@ -95,9 +95,9 @@ function LoanCard({ loan, isOfficer, onRecordRepayment, onViewDetails }) {
         label={`${fmt(loan.totalRepaid)} repaid of ${fmt(loan.totalDue)}`}
       />
 
-      <div className="flex items-center justify-between mt-3">
+      <div className="flex items-center justify-between mt-3 gap-3 flex-wrap">
         <StatusBadge status={isOverdue ? 'overdue' : loan.status} />
-        <div className="flex gap-2.5">
+        <div className="flex gap-2.5 flex-wrap">
           <button
             onClick={() => onViewDetails(loan)}
             className="text-[12px] text-amber-600 border border-amber-400 px-4 h-8 rounded-lg hover:bg-amber-50 transition"
@@ -118,7 +118,7 @@ function LoanCard({ loan, isOfficer, onRecordRepayment, onViewDetails }) {
   );
 }
 
-// ── Repayment Modal ───────────────────────────────────────────────────────────
+//     Repayment Modal                                                                                        ─
 function RepaymentModal({ loan, onClose, onSubmit, loading }) {
   const [form, setForm] = useState({ amount: '', mpesaRef: '', paidAt: new Date().toISOString().split('T')[0] });
 
@@ -153,7 +153,7 @@ function RepaymentModal({ loan, onClose, onSubmit, loading }) {
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+//     Main Page                                                                                                 ─
 export default function Loans() {
   const { chamaId } = useParams();
   const navigate = useNavigate();
@@ -214,7 +214,7 @@ export default function Loans() {
   return (
     <AppLayout>
       {/* Page header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="font-serif text-[26px] text-[#1C1814]">Loans</h1>
           <p className="text-sm text-[#9E9690] mt-0.5">
@@ -223,19 +223,19 @@ export default function Loans() {
         </div>
           <button
             onClick={() => setShowApplicationModal(true)}
-            className="bg-amber-600 text-white h-10 px-5 rounded-lg font-semibold text-sm hover:bg-amber-700 transition"
+            className="bg-amber-600 text-white h-10 px-5 rounded-lg font-semibold text-sm hover:bg-amber-700 transition whitespace-nowrap"
           >
             + Loan Application
           </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#E8E4DF] mb-5 gap-1">
+      <div className="flex border-b border-[#E8E4DF] mb-5 gap-1 overflow-x-auto">
         {tabs.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-5 pb-3 text-[13px] font-semibold border-b-2 -mb-px transition ${
+            className={`px-5 pb-3 text-[13px] font-semibold border-b-2 -mb-px transition whitespace-nowrap ${
               tab === t.key
                 ? 'text-amber-600 border-amber-600'
                 : 'text-[#9E9690] border-transparent hover:text-[#1C1814]'
@@ -246,7 +246,7 @@ export default function Loans() {
         ))}
       </div>
 
-      {/* ── PENDING VOTE TAB ── */}
+      {/*     PENDING VOTE TAB     */}
       {tab === 'pending' && (
         <div className="space-y-4">
           {pendingLoans.length === 0 ? (
@@ -272,7 +272,7 @@ export default function Loans() {
                   )}
 
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
                     <div>
                       <div className="font-bold text-[15px] text-[#1C1814]">{loan.borrowerId?.name}</div>
                       <div className="text-[12px] text-[#9E9690] mt-0.5">
@@ -311,7 +311,7 @@ export default function Loans() {
                         placeholder="Optional note for approval..."
                         className="w-full h-10 px-3 border border-[#E8E4DF] rounded-lg text-[13px] focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                       />
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 flex-wrap">
                         <button
                           onClick={() => handleVote(loan._id, 'approve', voteNote)}
                           disabled={votingId === loan._id}
@@ -319,7 +319,7 @@ export default function Loans() {
                         >
                           ✓ Approve Loan
                         </button>
-                        <div className="flex flex-1 gap-2">
+                        <div className="flex flex-1 gap-2 min-w-50">
                           <input
                             value={rejectReason}
                             onChange={e => setRejectReason(e.target.value)}
@@ -358,7 +358,7 @@ export default function Loans() {
         </div>
       )}
 
-      {/* ── ACTIVE TAB ── */}
+      {/*     ACTIVE TAB     */}
       {tab === 'active' && (
         <div className="space-y-4">
           {activeLoans.length === 0 ? (
@@ -379,7 +379,7 @@ export default function Loans() {
         </div>
       )}
 
-      {/* ── HISTORY TAB ── */}
+      {/*     HISTORY TAB     */}
       {tab === 'history' && (
         <div className="space-y-4">
           {settledLoans.length === 0 ? (

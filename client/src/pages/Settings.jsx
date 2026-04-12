@@ -30,7 +30,7 @@ export default function Settings() {
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
 
-  // ── Role check — must match Membership model: 'chairperson' ──────────────
+  //    Role check — must match Membership model: 'chairperson'               
   const isChairperson = role === 'chairperson';
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function Settings() {
 
   return (
     <AppLayout>
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="font-serif text-[26px] text-[#1C1814]">Settings</h1>
           <p className="text-sm text-[#9E9690] mt-0.5">
@@ -125,7 +125,7 @@ export default function Settings() {
           <button
             onClick={handleSave}
             disabled={saving || loading}
-            className="bg-amber-600 text-white h-10 px-5 rounded-lg font-semibold text-sm hover:bg-amber-700 disabled:opacity-50 transition"
+            className="bg-amber-600 text-white h-10 px-5 rounded-lg font-semibold text-sm hover:bg-amber-700 disabled:opacity-50 transition whitespace-nowrap"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
@@ -134,9 +134,9 @@ export default function Settings() {
 
       <div className="space-y-5">
 
-        {/* ── Chama Details ─────────────────────────────────────────────── */}
+        {/*    Chama Details                                               ─ */}
         <div className="bg-white border border-[#E8E4DF] rounded-2xl p-6">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9E9690] mb-5">
+          <h2 className="text-[11px] font-bold uppercase tracking-widesttext-[#9E9690] mb-5">
             Chama Details
           </h2>
           <div className="space-y-5">
@@ -174,12 +174,12 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* ── Contribution & Loan Settings ──────────────────────────────── */}
+        {/*    Contribution & Loan Settings                                  */}
         <div className="bg-white border border-[#E8E4DF] rounded-2xl p-6">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9E9690] mb-5">
+          <h2 className="text-[11px] font-bold uppercase tracking-widest text-[#9E9690] mb-5">
             Contribution & Loan Settings
           </h2>
-          <div className="grid grid-cols-2 gap-5 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
             <div>
               <label className="block text-[12px] font-semibold text-[#1C1814] mb-2">
                 Monthly Contribution (KSh)
@@ -214,7 +214,7 @@ export default function Settings() {
               </select>
             </div>
           </div>
-          <div className="max-w-xs">
+          <div className="w-full sm:max-w-xs">
             <label className="block text-[12px] font-semibold text-[#1C1814] mb-2">
               Default Loan Interest Rate (%)
             </label>
@@ -236,9 +236,9 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* ── ROSCA Cycle Status ────────────────────────────────────────── */}
+        {/*    ROSCA Cycle Status                                            */}
         <div className="bg-white border border-[#E8E4DF] rounded-2xl p-6">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9E9690] mb-5">
+          <h2 className="text-[11px] font-bold uppercase tracking-widest text-[#9E9690] mb-5">
             Rotation Cycle Status
           </h2>
 
@@ -248,7 +248,7 @@ export default function Settings() {
               <div className="h-4 bg-[#E8E4DF] rounded w-64" />
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-5 mb-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
               <div>
                 <div className="text-[11px] font-semibold text-[#9E9690] uppercase tracking-[0.08em] mb-1">
                   Active Cycle
@@ -276,7 +276,7 @@ export default function Settings() {
 
           {hasActiveCycle && (
             <div className="bg-[#F8F6F3] border border-[#E8E4DF] rounded-xl px-4 py-3 mb-4">
-              <div className="grid grid-cols-3 gap-4 text-[12px]">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-[12px]">
                 <div>
                   <span className="text-[#9E9690]">Pot recipient</span>
                   <div className="font-semibold text-[#1C1814] mt-0.5">
@@ -326,7 +326,7 @@ export default function Settings() {
                   <div className="font-semibold text-[13px] text-[#1C1814]">
                     Start Cycle {closedCycles + 1}
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[12px] font-semibold text-[#1C1814] mb-1.5">
                         Start Date
@@ -351,7 +351,7 @@ export default function Settings() {
                       />
                     </div>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 flex-wrap">
                     <button
                       onClick={handleStartNextCycle}
                       disabled={startingCycle}

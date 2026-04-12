@@ -8,7 +8,7 @@ export default function VerifyModal({ contribution, onConfirm, onClose, loading 
 
   return (
     <div className="fixed inset-0 bg-[#1C1814]/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-7 w-full max-w-[420px] shadow-2xl" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl p-7 w-full max-w-105 shadow-2xl" onClick={e => e.stopPropagation()}>
         <h2 className="font-bold text-[17px] text-[#1C1814] mb-2">Verify this contribution?</h2>
         <p className="text-[13px] text-[#6B6560] leading-relaxed mb-4">
           You are confirming that <strong className="text-[#1C1814]">{contribution.memberId?.name}</strong> paid
