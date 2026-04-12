@@ -30,7 +30,7 @@ export default function AppLayout({ children }) {
       />
 
       <div
-        className="flex-1 flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'lg:ml-16' : 'lg:ml-55'} ml-0"
+        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ml-0 ${collapsed ? 'lg:ml-16' : 'lg:ml-55'}`}
       >
         <TopBar
           chama={chama}
