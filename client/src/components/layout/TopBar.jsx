@@ -3,6 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { MdMenu, MdMenuOpen } from 'react-icons/md';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
+import {
+  MdAttachMoney,
+  MdCheckCircle,
+  MdWarningAmber,
+  MdAccountBalance,
+  MdClose,
+  MdCreditCard,
+  MdPersonAdd,
+  MdAutorenew,
+} from 'react-icons/md';
 
 const initials = (name) =>
   name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '??';
@@ -26,47 +36,47 @@ function auditToNotification(log) {
     CONTRIBUTION_RECORDED: {
       type: 'contribution',
       message: `${actor} recorded a KSh ${Number(after.amount || 0).toLocaleString('en-KE')} contribution`,
-      icon: '💰', bg: 'bg-green-50', color: 'text-green-700',
+      icon: MdAttachMoney, bg: 'bg-green-50', color: 'text-green-700',
     },
     CONTRIBUTION_VERIFIED: {
       type: 'contribution',
       message: `${actor} verified a KSh ${Number(after.amount || 0).toLocaleString('en-KE')} contribution`,
-      icon: '✓', bg: 'bg-green-100', color: 'text-green-800',
+      icon: MdCheckCircle, bg: 'bg-green-100', color: 'text-green-800',
     },
     CONTRIBUTION_DISPUTED: {
       type: 'contribution',
       message: `${actor} flagged a contribution as disputed`,
-      icon: '⚠', bg: 'bg-red-50', color: 'text-red-700',
+      icon: MdWarningAmber, bg: 'bg-red-50', color: 'text-red-700',
     },
     LOAN_APPLIED: {
       type: 'loan_application',
       message: `${actor} submitted a KSh ${Number(after.principalAmount || 0).toLocaleString('en-KE')} loan application — your vote is needed`,
-      icon: '🏦', bg: 'bg-amber-50', color: 'text-amber-800',
+      icon: MdAccountBalance, bg: 'bg-amber-50', color: 'text-amber-800',
     },
     LOAN_APPROVED: {
       type: 'loan_approved',
       message: `${actor} approved a loan application`,
-      icon: '✓', bg: 'bg-green-100', color: 'text-green-800',
+      icon: MdCheckCircle, bg: 'bg-green-100', color: 'text-green-800',
     },
     LOAN_REJECTED: {
       type: 'loan_rejected',
       message: `${actor} rejected a loan application`,
-      icon: '✗', bg: 'bg-red-100', color: 'text-red-800',
+      icon: MdClose, bg: 'bg-red-100', color: 'text-red-800',
     },
     LOAN_REPAYMENT_RECORDED: {
       type: 'repayment',
       message: `${actor} recorded a loan repayment`,
-      icon: '💳', bg: 'bg-blue-50', color: 'text-blue-700',
+      icon: MdCreditCard, bg: 'bg-blue-50', color: 'text-blue-700',
     },
     MEMBER_INVITED: {
       type: 'member_joined',
       message: `${actor} added a new member to the group`,
-      icon: '👤', bg: 'bg-purple-50', color: 'text-purple-700',
+      icon: MdPersonAdd, bg: 'bg-purple-50', color: 'text-purple-700',
     },
     CYCLE_CREATED: {
       type: 'cycle',
       message: `${actor} started a new contribution cycle`,
-      icon: '🔄', bg: 'bg-amber-50', color: 'text-amber-800',
+      icon: MdAutorenew, bg: 'bg-amber-50', color: 'text-amber-800',
     },
   };
 
