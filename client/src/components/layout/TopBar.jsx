@@ -83,10 +83,10 @@ function auditToNotification(log) {
   return map[log.action] || null;
 }
 
-function NotifIcon({ bg, color, icon }) {
+function NotifIcon({ bg, color, icon: Icon }) {
   return (
     <div className={`w-8 h-8 rounded-full ${bg} ${color} flex items-center justify-center text-sm shrink-0`}>
-      {icon}
+      <Icon className="w-4 h-4" />
     </div>
   );
 }
